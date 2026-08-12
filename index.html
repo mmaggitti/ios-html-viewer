@@ -102,9 +102,14 @@
                 }
                 /* document.open() wiped all window listeners — re-arm the
                    route guard so navigating to another #/f/ or #/d/ URL from
-                   this rendered document still works. */
+                   this rendered document still works. Also reload when the
+                   hash EMPTIES: after Open pushes "#/f/name", tapping Back is
+                   a same-document traversal to "" that would otherwise leave
+                   the rendered file on screen under the landing URL. A file's
+                   own in-page "#anchor" links match neither case and work
+                   normally. */
                 window.addEventListener('hashchange', function () {
-                    if (/^#\/(f|d)\//.test(location.hash)) location.reload();
+                    if (/^#\/(f|d)\//.test(location.hash) || location.hash === '') location.reload();
                 });
             } catch (e) { /* cosmetic only */ }
         }
@@ -117,15 +122,32 @@
             window.__routed = true;
             document.addEventListener('DOMContentLoaded', function () {
                 if (m) {
-                    var name = decodeURIComponent(m[1]);
+                    /* decodeURIComponent throws on truncated escapes (a
+                       mangled shortcut URL) and on Firefox's pre-decoded
+                       location.hash when the name holds a literal "%" — fall
+                       back to the raw fragment so neither can strand the page
+                       blank. */
+                    var name;
+                    try { name = decodeURIComponent(m[1]); } catch (e) { name = m[1]; }
                     var entry = loadSavedFile(name);
                     if (entry && entry.c) { renderDocument(entry.c, name); return; }
                     window.__missingFile = name;
                 } else {
                     try {
                         var payload = JSON.parse(b64urlDecode(d[1]));
-                        renderDocument(payload.c, payload.n);
-                        return;
+                        if (!payload || typeof payload.c !== 'string') throw new Error('bad payload');
+                        /* Portable links carry executable HTML from whoever
+                           crafted the URL, and every GitHub Pages project on
+                           this account shares the github.io origin — gate on
+                           one explicit tap. Saved-file (#/f/) shortcuts are
+                           local content and stay instant. */
+                        var label = (payload.n ? '"' + payload.n + '"' : 'a shared file') +
+                            ' (' + Math.max(1, Math.round(payload.c.length / 1024)) + ' KB)';
+                        if (window.confirm('Open ' + label + ' from this link? Only continue if you trust who sent it.')) {
+                            renderDocument(payload.c, payload.n);
+                            return;
+                        }
+                        /* declined — fall through to the landing page, no alert */
                     } catch (e) {
                         window.__badLink = true;
                     }
@@ -449,7 +471,7 @@
             function showAlert(message) {
                 var alertDialog = document.getElementById('alertDialog');
                 document.getElementById('alertMessage').textContent = message;
-                alertDialog.showModal();
+                if (!alertDialog.open) alertDialog.showModal();
             }
             document.querySelectorAll('[data-target="alertDialog"]').forEach(function (element) {
                 element.addEventListener('click', function () {
@@ -497,7 +519,9 @@
                 section.style.display = 'block';
                 names.forEach(function (name) {
                     var entry = loadSavedFile(name);
-                    if (!entry) return;
+                    /* shape-check, not just parse-check: one corrupt entry
+                       must not take down the whole list */
+                    if (!entry || typeof entry.c !== 'string') return;
                     var li = document.createElement('li');
 
                     var meta = document.createElement('div');
@@ -517,12 +541,14 @@
                     var openBtn = document.createElement('button');
                     openBtn.textContent = 'Open';
                     openBtn.addEventListener('click', function () {
-                        /* replaceState sets the shortcut-able URL without firing
+                        /* pushState sets the shortcut-able URL without firing
                            hashchange — a plain hash assignment would queue a
                            hashchange task that the re-armed route guard inside
                            renderDocument() would catch, forcing a pointless
-                           reload right after the in-place render. */
-                        try { history.replaceState(null, '', '#/f/' + encodeURIComponent(name)); }
+                           reload right after the in-place render. push (not
+                           replace) so Back returns to the landing page via
+                           that guard's empty-hash reload. */
+                        try { history.pushState(null, '', '#/f/' + encodeURIComponent(name)); }
                         catch (e) { location.hash = '#/f/' + encodeURIComponent(name); }
                         renderDocument(entry.c, name);
                     });
