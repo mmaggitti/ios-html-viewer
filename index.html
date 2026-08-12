@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -10,24 +10,185 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
     <link rel="manifest" href="site.webmanifest">
-    <link rel="mask-icon" href="safari-pinned-tab.svg" color="#5bbad5">
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="theme-color" content="#ffffff">
+    <link rel="mask-icon" href="safari-pinned-tab.svg" color="#000000">
+    <meta name="msapplication-TileColor" content="#000000">
+    <meta name="theme-color" content="#000000">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.classless.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.pumpkin.min.css">
 
-    <!-- Prism.js CSS for syntax highlighting -->
-    <!-- Prism.js CSS for syntax highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet">
+    <!-- Prism.js CSS for syntax highlighting (dark theme) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet">
 
+    <script>
+        /* ============================================================
+           Saved files + routing.
+           Lives in <head> so a routed URL (#/f/… or #/d/…) can hide
+           the landing page before it paints, then render the saved
+           document as soon as parsing finishes.
+           ============================================================ */
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
-        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        var STORE_PREFIX = 'ioshtmlviewer.file.';
+
+        function b64urlEncode(str) {
+            var bytes = new TextEncoder().encode(str), bin = '';
+            for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+            return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        function b64urlDecode(s) {
+            s = s.replace(/-/g, '+').replace(/_/g, '/');
+            while (s.length % 4) s += '=';
+            var bin = atob(s), bytes = new Uint8Array(bin.length);
+            for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            return new TextDecoder().decode(bytes);
+        }
+
+        function savedFileNames() {
+            var names = [];
+            try {
+                for (var i = 0; i < localStorage.length; i++) {
+                    var k = localStorage.key(i);
+                    if (k && k.indexOf(STORE_PREFIX) === 0) names.push(k.slice(STORE_PREFIX.length));
+                }
+            } catch (e) { /* storage unavailable */ }
+            return names.sort();
+        }
+
+        function loadSavedFile(name) {
+            try {
+                var raw = localStorage.getItem(STORE_PREFIX + name);
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) { return null; }
+        }
+
+        /* A per-file home-screen icon in the same style as the app icon:
+           black ground, the file's initial in white. Falls back silently
+           to the app icon if canvas export is unavailable. */
+        function makeFileIcon(name) {
+            try {
+                var c = document.createElement('canvas');
+                c.width = c.height = 180;
+                var ctx = c.getContext('2d');
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, 180, 180);
+                var ch = (name.match(/[a-z0-9]/i) || ['H'])[0].toUpperCase();
+                ctx.fillStyle = '#fff';
+                ctx.font = '700 96px -apple-system, "Helvetica Neue", Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(ch, 90, 98);
+                return c.toDataURL('image/png');
+            } catch (e) { return null; }
+        }
+
+        /* Replace the whole document with the stored HTML — same technique
+           as the manual "View Rendered HTML" flow — then re-apply a title
+           and touch icon so Share → Add to Home Screen names the shortcut
+           after the file and gives it a matching icon. */
+        function renderDocument(content, name) {
+            document.open();
+            document.write(content);
+            document.close();
+            try {
+                if (name) {
+                    document.title = name;
+                    var icon = makeFileIcon(name);
+                    if (icon && document.head) {
+                        var link = document.createElement('link');
+                        link.rel = 'apple-touch-icon';
+                        link.href = icon;
+                        document.head.appendChild(link);
+                    }
+                }
+                /* document.open() wiped all window listeners — re-arm the
+                   route guard so navigating to another #/f/ or #/d/ URL from
+                   this rendered document still works. */
+                window.addEventListener('hashchange', function () {
+                    if (/^#\/(f|d)\//.test(location.hash)) location.reload();
+                });
+            } catch (e) { /* cosmetic only */ }
+        }
+
+        (function route() {
+            var m = location.hash.match(/^#\/f\/(.+)$/);
+            var d = m ? null : location.hash.match(/^#\/d\/(.+)$/);
+            if (!m && !d) return;
+            document.documentElement.classList.add('routing');
+            window.__routed = true;
+            document.addEventListener('DOMContentLoaded', function () {
+                if (m) {
+                    var name = decodeURIComponent(m[1]);
+                    var entry = loadSavedFile(name);
+                    if (entry && entry.c) { renderDocument(entry.c, name); return; }
+                    window.__missingFile = name;
+                } else {
+                    try {
+                        var payload = JSON.parse(b64urlDecode(d[1]));
+                        renderDocument(payload.c, payload.n);
+                        return;
+                    } catch (e) {
+                        window.__badLink = true;
+                    }
+                }
+                /* Route failed — fall back to the landing page. The landing
+                   script has already run (and skipped itself, because
+                   __routed was set during parsing), so initialize it here. */
+                document.documentElement.classList.remove('routing');
+                window.__routed = false;
+                if (window.initLanding) window.initLanding();
+            });
+        })();
+
+        /* A route arriving as a hash-only change (e.g. a portable link pasted
+           while the app is already open) doesn't reload the page, so the
+           router above never re-runs — force a real load. document.open()
+           clears window listeners, so the Open button's own in-place render
+           never triggers this. */
+        window.addEventListener('hashchange', function () {
+            if (/^#\/(f|d)\//.test(location.hash)) location.reload();
+        });
+    </script>
+
     <style>
-        /* Override Pico CSS */
+        /* Pure black & white theme on top of Pico dark */
+        :root,
+        [data-theme=dark] {
+            --pico-background-color: #000;
+            --pico-color: #fff;
+            --pico-card-background-color: #0d0d0d;
+            --pico-card-border-color: #2a2a2a;
+            --pico-card-sectioning-background-color: #0d0d0d;
+            --pico-muted-color: #9a9a9a;
+            --pico-muted-border-color: #2a2a2a;
+            --pico-primary: #fff;
+            --pico-primary-background: #fff;
+            --pico-primary-border: #fff;
+            --pico-primary-inverse: #000;
+            --pico-primary-hover: #d9d9d9;
+            --pico-primary-hover-background: #d9d9d9;
+            --pico-primary-hover-border: #d9d9d9;
+            --pico-primary-focus: rgba(255, 255, 255, .35);
+            --pico-primary-underline: rgba(255, 255, 255, .5);
+            --pico-code-background-color: #111;
+            --pico-code-color: #eee;
+            --pico-form-element-background-color: #111;
+            --pico-form-element-border-color: #333;
+            --pico-form-element-color: #fff;
+        }
+
+        html.routing body {
+            display: none;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+        }
+
+        h1, h2, h3, h4, h5, h6, strong {
+            color: #fff;
+        }
+
         main,
         header {
             max-width: 700px !important;
@@ -42,49 +203,41 @@
             text-align: center;
         }
 
-
-        .iphone {
-            width: 160px;
-            height: 160px;
+        /* The </> logo */
+        .logo {
+            display: block;
+            margin: 24px auto 8px;
+            width: 210px;
+            height: auto;
         }
 
         @keyframes float {
-            0% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
-
-            100% {
-                transform: translateY(0);
-            }
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
         }
 
         .floating {
             animation: float 3s ease-in-out infinite;
         }
 
-        #refreshNote {
-            display: none;
-        }
+        #refreshNote { display: none; }
 
         #osNote {
             display: none;
-            color: red;
-            padding: 6px !important
+            color: #ddd;
+            padding: 6px !important;
         }
 
         #homeScreenWarning {
             display: none;
-            color: red;
+            color: #ddd;
             margin-top: 20px;
             font-size: 1.1em;
         }
 
         pre {
-            background-color: #f4f4f4;
+            background-color: #111;
             padding: 10px;
             border-radius: 5px;
             overflow-x: auto;
@@ -92,12 +245,25 @@
             white-space: pre-wrap;
         }
 
-        /* Add spacing to buttons */
-        #uploadFile button {
-            margin: 10px 5px;
+        button.ghost {
+            background: transparent;
+            color: #fff;
+            border: 1px solid #555;
         }
 
-        /* Make buttons stack vertically with spacing on smaller screens */
+        input[type=file]::file-selector-button {
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #555;
+        }
+
+        button.ghost:hover {
+            background: #1a1a1a;
+            border-color: #888;
+        }
+
+        #uploadFile button { margin: 10px 5px; }
+
         @media (max-width: 700px) {
             #uploadFile {
                 display: flex;
@@ -112,15 +278,47 @@
             }
         }
 
-        svg {
-            display: block;
-            margin: 0 auto;
+        /* Saved files list */
+        .saved-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
         }
 
-        .iphone {
-            width: 160px;
-            height: 160px;
+        .saved-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 10px 0;
+            border-bottom: 1px solid #222;
+            margin: 0;
         }
+
+        .saved-list li:last-child { border-bottom: none; }
+
+        .file-name {
+            color: #fff;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .file-meta small { color: #9a9a9a; }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .file-actions button {
+            margin: 0;
+            padding: 6px 14px;
+            width: auto;
+            font-size: .85em;
+        }
+
+        .hint small { color: #9a9a9a; }
     </style>
 </head>
 
@@ -135,24 +333,14 @@
     </header>
 
     <main>
-        <svg version="1.1" class="iphone" xmlns="http://www.w3.org/2000/svg" viewBox="-300 0 1000 772">
-            <path class="animate" id="bezel" fill="#FFFFFF" stroke="#000000" stroke-width="2" stroke-linecap="square"
-                stroke-linejoin="round" d="
-        M63.406,1C28.832,1,1,28.832,1,63.406v590.188C1,688.168,28.832,716,63.406,716h259.188C357.168,716,385,688.168,385,653.594V63.406
-        C385,28.832,357.168,1,322.594,1H63.406z M32,118h322v482H32V118z" />
-            <path class="animate" id="speaker" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="square"
-                stroke-linejoin="round" d="
-        M164.5,60h57c3.59,0,6.5,2.91,6.5,6.5l0,0c0,3.59-2.91,6.5-6.5,6.5h-57c-3.59,0-6.5-2.91-6.5-6.5l0,0C158,62.91,160.91,60,164.5,60z
-        " />
-            <path class="animate" id="button" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="square"
-                stroke-linejoin="round" d="
-        M227,650c0,18.778-15.222,34-34,34s-34-15.222-34-34s15.222-34,34-34S227,631.222,227,650z" />
-            <path class="animate" id="button1" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="square"
-                stroke-linejoin="round" d="
-        M187.277,639h11.445c2.915,0,5.277,2.363,5.277,5.277v11.445c0,2.915-2.363,5.277-5.277,5.277h-11.445
-        c-2.915,0-5.277-2.363-5.277-5.277v-11.445C182,641.363,184.363,639,187.277,639z" />
+        <!-- Black & white </> mark, stroke-drawn on load like the original logo -->
+        <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="128 258 768 508" aria-label="iOS HTML Viewer logo">
+            <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="96">
+                <polyline class="animate" points="360,344 192,512 360,680" stroke="#ffffff" stroke-opacity="0.55"/>
+                <line class="animate" x1="552" y1="322" x2="472" y2="702" stroke="#ffffff" stroke-opacity="0.55"/>
+                <polyline class="animate" points="664,344 832,512 664,680" stroke="#ffffff"/>
+            </g>
         </svg>
-
 
         <!-- OS Note: dynamically shown for non-iOS devices -->
         <article id="osNote"></article>
@@ -163,15 +351,16 @@
         <h4>Break Free from iOS Restrictions</h4>
         <ul>
             <li>Enjoy full interactivity with your local HTML content, just like on a desktop or Android device</li>
-            <li>Bypass iOS serious limitations that prevent easy local HTML file viewing</li>
+            <li>Save files on this device and pin them to your Home Screen for one-tap viewing</li>
         </ul>
 
         <hr>
         <article id="uploadFile">
-            <input type="file" id="fileInput">
+            <input type="file" id="fileInput" accept=".html,.htm,text/html">
             <button id="viewButton">View Rendered HTML</button>
-            <button id="viewSourceButton">View Source Code</button>
-            <button id="hideSourceButton" style="display: none;">Hide Source Code</button>
+            <button id="saveButton">Save to This Device</button>
+            <button id="viewSourceButton" class="ghost">View Source Code</button>
+            <button id="hideSourceButton" class="ghost" style="display: none;">Hide Source Code</button>
         </article>
 
         <div id="refreshNote">
@@ -188,33 +377,39 @@
             <pre><code id="sourceCode" class="language-html"></code></pre>
         </div>
 
+        <article id="savedSection" style="display: none;">
+            <h4>Saved Files</h4>
+            <ul id="savedList" class="saved-list"></ul>
+            <p class="hint"><small><strong>Pin to Home Screen:</strong> open a saved file, then tap
+                    <strong>Share&nbsp;→&nbsp;Add to Home Screen</strong>. The shortcut reopens that file
+                    directly, with its own icon.</small></p>
+            <p class="hint"><small>Saved files live in Safari's storage for this site, on this device only.
+                    If you don't open this app for a few weeks, iOS may clear them — just save the file
+                    again. For small files, <em>Link</em> copies a self-contained URL that keeps working
+                    regardless.</small></p>
+        </article>
+
         <hr>
 
         <article>
             <small>
-                Security Notice: Your uploaded HTML file stays on your device and is processed entirely within your
-                browser,
-                ensuring your privacy and security are fully protected.
+                Security Notice: Your HTML files stay on your device and are processed entirely within your
+                browser, ensuring your privacy and security are fully protected. Nothing is ever uploaded.
             </small>
         </article>
     </main>
-
 
     <footer class="centeredContent">
         <div>
             <p> <small>Created: August 14, 2024<span id="actualDate"></span> </small></p>
             <img src="images/canada.png" alt="Flag of Canada">
-            <a href="https://github.com/AImarkdown/ios-html-viewer"><img width="24" src="images/github-logo.png"
+            <a href="https://github.com/mmaggitti/ios-html-viewer"><img width="24" src="images/github-logo.png"
                     alt=""></a>
-
             <p><small>• Open Source by <a href="https://simplertasks.com">SimplerTasks Company</a>
+                    • based on <a href="https://github.com/AImarkdown/ios-html-viewer">AImarkdown/ios-html-viewer</a>
                     •</small></p>
         </div>
-
     </footer>
-
-
-
 
     <!-- Modal for alerts -->
     <dialog id="alertDialog">
@@ -231,183 +426,223 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 
     <script>
-        var path = $(".animate");
-        path.each(function () {
-            var length = this.getTotalLength();
-            var dashArray = length + ", " + length;
-            var dashOffset = length;
-            $(this).css({ "stroke-dasharray": dashArray, "stroke-dashoffset": dashOffset });
-        });
-        setTimeout(function () {
-            $('.animate').css({ "stroke-dashoffset": "0", "-webkit-transition": "stroke-dashoffset 3s ease-in-out, fill 3s ease-in-out" });
-        }, 1000);
-        setTimeout(function () {
-            $('#speaker').css({ "fill": "#fff" });
-            $('#bezel').css({ "fill": "#000" });
-            $('#button').css({ "fill": "#fff" });
-        }, 4000);
+        function initLanding() {
 
-        // Add floating animation after initial animations
-        setTimeout(function () {
-            $('svg.iphone').addClass('floating');
-        }, 4500); // Delay to start after all other animations are done
-    </script>
+            /* ---------- logo draw-on animation (original technique, sans jQuery) ---------- */
+            var strokes = document.querySelectorAll('.animate');
+            strokes.forEach(function (el) {
+                var length = el.getTotalLength();
+                el.style.strokeDasharray = length + ', ' + length;
+                el.style.strokeDashoffset = length;
+            });
+            setTimeout(function () {
+                strokes.forEach(function (el) {
+                    el.style.transition = 'stroke-dashoffset 3s ease-in-out';
+                    el.style.strokeDashoffset = '0';
+                });
+            }, 500);
+            setTimeout(function () {
+                document.querySelector('svg.logo').classList.add('floating');
+            }, 4000);
 
-    <script>
-        // Show the alert dialog with a custom message
-        function showAlert(message) {
-            const alertDialog = document.getElementById('alertDialog');
-            const alertMessage = document.getElementById('alertMessage');
-            alertMessage.textContent = message;
-            alertDialog.showModal();
-
-            // Close dialog on 'OK' button click
+            /* ---------- dialogs & OS detection ---------- */
+            function showAlert(message) {
+                var alertDialog = document.getElementById('alertDialog');
+                document.getElementById('alertMessage').textContent = message;
+                alertDialog.showModal();
+            }
             document.querySelectorAll('[data-target="alertDialog"]').forEach(function (element) {
                 element.addEventListener('click', function () {
-                    alertDialog.close();
+                    document.getElementById('alertDialog').close();
                 });
             });
-        }
 
-        function detectOS() {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            const osNote = document.getElementById('osNote');
-            const homeScreenWarning = document.getElementById('homeScreenWarning');
-            let os = 'Unknown';
+            function detectOS() {
+                var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+                var osNote = document.getElementById('osNote');
+                var homeScreenWarning = document.getElementById('homeScreenWarning');
+                var os = 'Unknown';
 
-            // iOS detection
-            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-                os = 'iOS';
+                if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                    os = 'iOS';
+                    if (window.navigator.standalone === true) {
+                        homeScreenWarning.innerHTML = '<small>You are running this as a standalone Home Screen app, which keeps its storage separate from Safari — files saved here will not appear in Safari and vice versa. For the best experience (and working file shortcuts), open this page in Safari and re-add your shortcuts from there.</small>';
+                        homeScreenWarning.style.display = 'block';
+                    }
+                } else if (/android/i.test(userAgent)) {
+                    os = 'Android';
+                } else if (/Win|Mac|Linux/.test(userAgent)) {
+                    if (/Win/.test(userAgent)) os = 'Windows';
+                    if (/Mac/.test(userAgent)) os = 'macOS';
+                    if (/Linux/.test(userAgent)) os = 'Linux';
+                }
 
-                // Detect if running in standalone mode (home screen app)
-                if (window.navigator.standalone === true) {
-                    homeScreenWarning.innerHTML = '<small>You are running this as a Home Screen app. That will work, but there is no way to refresh the page other than closing the app. It is better to run this in your browser.</small>';
-                    homeScreenWarning.style.display = 'block';
+                if (os !== 'iOS') {
+                    osNote.innerHTML = '<small>Note: You are using ' + os + '. This tool is meant for iPads and iPhones, but you can still use it.</small>';
+                    osNote.style.display = 'block';
                 }
             }
-            // Android detection
-            else if (/android/i.test(userAgent)) {
-                os = 'Android';
-            }
-            // Other operating systems (Windows, macOS, Linux, etc.)
-            else if (/Win|Mac|Linux/.test(userAgent)) {
-                if (/Win/.test(userAgent)) os = 'Windows';
-                if (/Mac/.test(userAgent)) os = 'macOS';
-                if (/Linux/.test(userAgent)) os = 'Linux';
+
+            /* ---------- saved files UI ---------- */
+            function formatSize(n) {
+                return n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
             }
 
-            console.log('Detected OS:', os); // Log detected OS
+            function refreshSavedList() {
+                var names = savedFileNames();
+                var section = document.getElementById('savedSection');
+                var list = document.getElementById('savedList');
+                list.textContent = '';
+                if (!names.length) { section.style.display = 'none'; return; }
+                section.style.display = 'block';
+                names.forEach(function (name) {
+                    var entry = loadSavedFile(name);
+                    if (!entry) return;
+                    var li = document.createElement('li');
 
-            // Check if osNote element exists
-            console.log('osNote element:', osNote);
+                    var meta = document.createElement('div');
+                    meta.className = 'file-meta';
+                    var nm = document.createElement('div');
+                    nm.className = 'file-name';
+                    nm.textContent = name;
+                    var det = document.createElement('small');
+                    det.textContent = formatSize(entry.c.length) +
+                        (entry.t ? ' · saved ' + new Date(entry.t).toLocaleDateString() : '');
+                    meta.appendChild(nm);
+                    meta.appendChild(det);
 
-            // Show OS note for non-iOS devices
-            if (os !== 'iOS') {
-                osNote.innerHTML = `<small>Note: You are using ${os}. This file has no specific advantage for you; it is meant for iPads and iPhones, but you can still use it.</small>`;
-                osNote.style.display = 'block';
+                    var actions = document.createElement('div');
+                    actions.className = 'file-actions';
+
+                    var openBtn = document.createElement('button');
+                    openBtn.textContent = 'Open';
+                    openBtn.addEventListener('click', function () {
+                        /* replaceState sets the shortcut-able URL without firing
+                           hashchange — a plain hash assignment would queue a
+                           hashchange task that the re-armed route guard inside
+                           renderDocument() would catch, forcing a pointless
+                           reload right after the in-place render. */
+                        try { history.replaceState(null, '', '#/f/' + encodeURIComponent(name)); }
+                        catch (e) { location.hash = '#/f/' + encodeURIComponent(name); }
+                        renderDocument(entry.c, name);
+                    });
+
+                    var linkBtn = document.createElement('button');
+                    linkBtn.textContent = 'Link';
+                    linkBtn.className = 'ghost';
+                    linkBtn.addEventListener('click', function () {
+                        if (entry.c.length > 65536) {
+                            showAlert('This file is too large for a portable link (64 KB max). Use Open + Add to Home Screen instead.');
+                            return;
+                        }
+                        var url = location.origin + location.pathname + '#/d/' +
+                            b64urlEncode(JSON.stringify({ n: name, c: entry.c }));
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(url).then(function () {
+                                showAlert('Portable link copied. It contains the whole file — bookmark it or send it anywhere.');
+                            }, function () { window.prompt('Copy this link:', url); });
+                        } else {
+                            window.prompt('Copy this link:', url);
+                        }
+                    });
+
+                    var delBtn = document.createElement('button');
+                    delBtn.textContent = 'Delete';
+                    delBtn.className = 'ghost';
+                    delBtn.addEventListener('click', function () {
+                        if (window.confirm('Delete "' + name + '" from this device?')) {
+                            try { localStorage.removeItem(STORE_PREFIX + name); } catch (e) { }
+                            refreshSavedList();
+                        }
+                    });
+
+                    actions.appendChild(openBtn);
+                    actions.appendChild(linkBtn);
+                    actions.appendChild(delBtn);
+                    li.appendChild(meta);
+                    li.appendChild(actions);
+                    list.appendChild(li);
+                });
             }
-        }
 
-        // Run OS detection on page load
-        window.onload = function () {
-            detectOS();
-        };
+            /* ---------- boot ---------- */
+            function boot() {
+                detectOS();
+                refreshSavedList();
+                if (window.__missingFile) {
+                    showAlert('No file named "' + window.__missingFile + '" is saved on this device. It may have been deleted, cleared by iOS after long inactivity, or saved on a different device. Save it again to fix this shortcut.');
+                    window.__missingFile = null;
+                }
+                if (window.__badLink) {
+                    showAlert('This portable link is damaged or incomplete and cannot be opened.');
+                    window.__badLink = null;
+                }
+            }
+            if (document.readyState === 'complete') boot();
+            else window.addEventListener('load', boot);
 
-        // Reset source code section when a new file is uploaded
-        function resetSourceCode() {
-            document.getElementById('sourceCodeSection').style.display = 'none';
-            document.getElementById('viewSourceButton').style.display = 'inline-block';
-            document.getElementById('hideSourceButton').style.display = 'none';
-            document.getElementById('sourceCode').textContent = ''; // Clear the previous source code
-        }
+            function resetSourceCode() {
+                document.getElementById('sourceCodeSection').style.display = 'none';
+                document.getElementById('viewSourceButton').style.display = 'inline-block';
+                document.getElementById('hideSourceButton').style.display = 'none';
+                document.getElementById('sourceCode').textContent = '';
+            }
 
-        // Run OS detection on page load
-        window.onload = function () {
-            detectOS();
-        };
+            document.getElementById('fileInput').addEventListener('change', resetSourceCode);
 
-        // Listen for file input change and reset the source code view
-        document.getElementById('fileInput').addEventListener('change', function () {
-            resetSourceCode();
-        });
+            function withSelectedFile(fn) {
+                var file = document.getElementById('fileInput').files[0];
+                if (!file) { showAlert('Please select a file first!'); return; }
+                var reader = new FileReader();
+                reader.onload = function (event) { fn(file, event.target.result); };
+                reader.readAsText(file);
+            }
 
-        document.getElementById('viewButton').addEventListener('click', function () {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-
-            if (file) {
-                const reader = new FileReader();
-
-                reader.onload = function (event) {
-                    const fileContent = event.target.result;
-
-                    // Update the render text with the file name and toggle visibility
-                    document.getElementById('renderText').textContent = `Rendering "${file.name}"`;
+            document.getElementById('viewButton').addEventListener('click', function () {
+                withSelectedFile(function (file, content) {
+                    document.getElementById('renderText').textContent = 'Rendering "' + file.name + '"';
                     document.getElementById('uploadFile').style.display = 'none';
                     document.getElementById('refreshNote').style.display = 'block';
+                    setTimeout(function () { renderDocument(content, file.name); }, 5000);
+                });
+            });
 
-                    // Wait 5 seconds before rendering the content
-                    setTimeout(function () {
-                        // Replace the entire document with the uploaded HTML content
-                        document.open();
-                        document.write(fileContent);
-                        document.close();
-                    }, 5000); // 5000ms = 5 seconds
-                };
+            document.getElementById('saveButton').addEventListener('click', function () {
+                withSelectedFile(function (file, content) {
+                    try {
+                        localStorage.setItem(STORE_PREFIX + file.name, JSON.stringify({ c: content, t: Date.now() }));
+                    } catch (e) {
+                        showAlert('Could not save — storage is full or unavailable. Delete some saved files and try again.');
+                        return;
+                    }
+                    if (navigator.storage && navigator.storage.persist) {
+                        navigator.storage.persist().catch(function () { });
+                    }
+                    refreshSavedList();
+                    showAlert('Saved "' + file.name + '" on this device. Tap Open below, then Share → Add to Home Screen to pin it.');
+                });
+            });
 
-                reader.readAsText(file);
-            } else {
-                showAlert('Please select a file first!');
-            }
-        });
-
-        document.getElementById('viewSourceButton').addEventListener('click', function () {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-
-            if (file) {
-                const reader = new FileReader();
-
-                reader.onload = function (event) {
-                    const fileContent = event.target.result;
-
-                    // Display the source code with syntax highlighting
-                    const sourceCodeElement = document.getElementById('sourceCode');
-                    sourceCodeElement.textContent = fileContent;
-                    Prism.highlightElement(sourceCodeElement); // Highlight the code
+            document.getElementById('viewSourceButton').addEventListener('click', function () {
+                withSelectedFile(function (file, content) {
+                    var sourceCodeElement = document.getElementById('sourceCode');
+                    sourceCodeElement.textContent = content;
+                    if (window.Prism) Prism.highlightElement(sourceCodeElement);
                     document.getElementById('sourceCodeSection').style.display = 'block';
                     document.getElementById('viewSourceButton').style.display = 'none';
                     document.getElementById('hideSourceButton').style.display = 'inline-block';
-                };
+                });
+            });
 
-                reader.readAsText(file);
-            } else {
-                showAlert('Please select a file first!');
-            }
-        });
+            document.getElementById('hideSourceButton').addEventListener('click', function () {
+                document.getElementById('sourceCodeSection').style.display = 'none';
+                document.getElementById('viewSourceButton').style.display = 'inline-block';
+                document.getElementById('hideSourceButton').style.display = 'none';
+            });
+        }
 
-        document.getElementById('hideSourceButton').addEventListener('click', function () {
-            document.getElementById('sourceCodeSection').style.display = 'none';
-            document.getElementById('viewSourceButton').style.display = 'inline-block';
-            document.getElementById('hideSourceButton').style.display = 'none';
-        });
-    </script>
-    <script>
-        var path = $(".animate");
-        path.each(function () {
-            var length = this.getTotalLength();
-            var dashArray = length + ", " + length;
-            var dashOffset = length;
-            $(this).css({ "stroke-dasharray": dashArray, "stroke-dashoffset": dashOffset });
-        });
-        setTimeout(function () {
-            $('.animate').css({ "stroke-dashoffset": "0", "-webkit-transition": "stroke-dashoffset 3s ease-in-out, fill 3s ease-in-out" });
-        }, 1000);
-        setTimeout(function () {
-            $('#speaker').css({ "fill": "#fff" });
-            $('#bezel').css({ "fill": "#000" });
-            $('#button').css({ "fill": "#fff" });
-        }, 4000);
+        window.initLanding = initLanding;
+        if (!window.__routed) initLanding();
     </script>
 
 </body>

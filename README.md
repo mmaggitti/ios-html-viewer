@@ -21,7 +21,9 @@ In addition to rendering your HTML files, iOS HTML Viewer offers an optional fea
 - **Ad-Free and Subscription-Free**: No ads or hidden costs—just a simple, effective solution for viewing HTML files.
 - **Privacy First**: Your uploaded HTML files are processed locally on your device, ensuring complete privacy and security.
 - **Cross-Platform**: While designed for iOS, this viewer also works on other platforms like Android and desktop browsers.
-- **Standalone Mode**: Can be added to your home screen as a standalone app, though browser use is recommended due to refresh limitations in standalone mode.
+- **Saved Files**: Save an HTML file into the browser's local storage on your device and reopen it any time from the Saved Files list — nothing is ever uploaded.
+- **Home Screen Shortcuts**: Open a saved file, then Share → Add to Home Screen. The shortcut reopens that exact file directly, with its own icon (the file's initial, in the app's black-and-white style).
+- **Portable Links**: For files under 64 KB, copy a self-contained link that embeds the entire document in the URL — it works on any device, independent of saved storage.
 
 ## License
 
@@ -36,6 +38,17 @@ This repository is a copy of [AImarkdown/ios-html-viewer](https://github.com/AIm
 
 **https://mmaggitti.github.io/ios-html-viewer/**
 
-Changes from upstream: asset paths made relative (required for a GitHub Pages project URL)
-and the upstream Netlify status badge removed. To redeploy after changes, push to the
-`gh-pages` branch.
+Changes from upstream:
+
+- Asset paths made relative (required for a GitHub Pages project URL); Netlify badge removed.
+- Pure black-and-white theme (black canvas, white text, monochrome buttons).
+- New `</>` logo and icon set, regenerated from `icon-master.svg`.
+- **Saved files + Home Screen shortcuts**: files persist in `localStorage`
+  (`ioshtmlviewer.file.<name>`), reopened via `#/f/<name>` URLs; portable links embed the
+  document base64url-encoded in `#/d/…` URLs (≤64 KB). The manifest declares
+  `display: "browser"` deliberately — iOS gives standalone home-screen apps a storage
+  container *separate* from Safari, so shortcuts must open in Safari to see saved files.
+- Storage caveat: Safari deletes site storage after ~7 days of no visits (ITP). Regular use
+  resets the clock; `navigator.storage.persist()` is requested; portable links are immune.
+
+To redeploy after changes, push to the `gh-pages` branch.
