@@ -61,6 +61,127 @@
             } catch (e) { return null; }
         }
 
+        /* ============================================================
+           JSX / TSX rendering (Tier 2): self-contained React components
+           are transpiled in the browser at view time. The shell built
+           here does everything — import map → esm.sh, Tailwind Play
+           CDN, Sucrase transpile, Blob-URL module import, mount.
+           Project-local imports (shadcn/ui "@/…", relative paths) are
+           deliberately unsupported and get an explanation page.
+           ============================================================ */
+
+        var SUCRASE_URL = 'https://esm.sh/sucrase@3.35.0';
+        var REACT_URL = 'https://esm.sh/react@18.3.1';
+        var REACT_DOM_URL = 'https://esm.sh/react-dom@18.3.1';
+        var JSX_PINS = {
+            'recharts': 'https://esm.sh/recharts@2.15.0?external=react,react-dom',
+            'lucide-react': 'https://esm.sh/lucide-react@0.454.0?external=react',
+            'framer-motion': 'https://esm.sh/framer-motion@11.15.0?external=react,react-dom',
+            'd3': 'https://esm.sh/d3@7.9.0',
+            'lodash': 'https://esm.sh/lodash@4.17.21',
+            'papaparse': 'https://esm.sh/papaparse@5.4.1',
+            'three': 'https://esm.sh/three@0.170.0',
+            'date-fns': 'https://esm.sh/date-fns@3.6.0',
+            'clsx': 'https://esm.sh/clsx@2.1.1',
+            'tailwind-merge': 'https://esm.sh/tailwind-merge@2.5.4'
+        };
+
+        function isJsxName(name) {
+            return /\.(jsx|tsx)$/i.test(name || '');
+        }
+
+        function scanImports(src) {
+            var specs = {}, m;
+            [/\bimport\s+(?:[^'"]*?\bfrom\s+)?['"]([^'"\n]+)['"]/g,
+             /\bexport\s+[^'"]*?\bfrom\s+['"]([^'"\n]+)['"]/g,
+             /\bimport\s*\(\s*['"]([^'"\n]+)['"]/g].forEach(function (re) {
+                while ((m = re.exec(src))) specs[m[1]] = true;
+            });
+            return Object.keys(specs);
+        }
+
+        function escapeHtml(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function buildJsxShell(source, name) {
+            var specs = scanImports(source);
+            var safeName = escapeHtml(name || 'component.jsx');
+            var head = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
+                '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+                '<title>' + safeName + '</title>';
+
+            var unsupported = specs.filter(function (s) {
+                return s.charAt(0) === '.' || s.charAt(0) === '/' || s.indexOf('@/') === 0;
+            });
+            if (unsupported.length) {
+                return head + '</head><body style="font-family:-apple-system,sans-serif;background:#000;color:#fff;padding:24px">' +
+                    '<h3>Can&#39;t render ' + safeName + '</h3>' +
+                    '<p>It imports project-local files that don&#39;t exist outside its original project ' +
+                    '(typically shadcn/ui components):</p>' +
+                    '<pre style="color:#faa;white-space:pre-wrap">' + unsupported.map(escapeHtml).join('\n') + '</pre>' +
+                    '<p>Only self-contained components importing npm libraries are supported. ' +
+                    'Ask for a version without those imports.</p></body></html>';
+            }
+
+            var imports = {
+                'react': REACT_URL,
+                'react/': REACT_URL + '/',
+                'react-dom': REACT_DOM_URL,
+                'react-dom/': REACT_DOM_URL + '/'
+            };
+            specs.forEach(function (s) {
+                if (s === 'react' || s.indexOf('react/') === 0 ||
+                    s === 'react-dom' || s.indexOf('react-dom/') === 0) return;
+                imports[s] = JSX_PINS[s] || ('https://esm.sh/' + s + '?external=react,react-dom');
+            });
+            /* <-escape so no specifier can break out of the script tags */
+            var mapJson = JSON.stringify({ imports: imports }).replace(/</g, '\\u003C');
+
+            return head +
+                '<script type="importmap">' + mapJson + '<\/script>' +
+                '<script src="https://cdn.tailwindcss.com"><\/script>' +
+                '</head><body>' +
+                '<div id="root"><p id="__ldr" style="font-family:-apple-system,sans-serif;color:#888;padding:24px">' +
+                'Loading component and libraries…</p></div>' +
+                '<pre id="__err" style="display:none;font-family:ui-monospace,Menlo,monospace;font-size:14px;' +
+                'color:#900;background:#fff0f0;padding:16px;margin:16px;border-radius:8px;white-space:pre-wrap"></pre>' +
+                '<script>window.__SRC__=' + JSON.stringify(b64urlEncode(source)) + ';<\/script>' +
+                '<script type="module">\n' +
+                'function showErr(e){var l=document.getElementById("__ldr");if(l)l.remove();' +
+                'var p=document.getElementById("__err");' +
+                'if(p.style.display==="block")return;/* first error wins */' +
+                'p.textContent="This component could not be rendered:\\n\\n"+String(e&&e.stack||e&&e.message||e);' +
+                'p.style.display="block";}\n' +
+                'window.addEventListener("error",function(e){showErr(e.error||e.message);});\n' +
+                'window.addEventListener("unhandledrejection",function(e){showErr(e.reason);});\n' +
+                '(async function(){try{\n' +
+                'var s=window.__SRC__.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";\n' +
+                'var bin=atob(s),by=new Uint8Array(bin.length);' +
+                'for(var i=0;i<bin.length;i++)by[i]=bin.charCodeAt(i);\n' +
+                'var src=new TextDecoder().decode(by);\n' +
+                'var sucrase=await import(' + JSON.stringify(SUCRASE_URL) + ');\n' +
+                'var out=sucrase.transform(src,{transforms:["jsx","typescript"],jsxRuntime:"automatic",production:true}).code;\n' +
+                'var mod=await import(URL.createObjectURL(new Blob([out],{type:"text/javascript"})));\n' +
+                'var rootEl=document.getElementById("root");\n' +
+                'var Component=mod.default;\n' +
+                'if(!Component){\n' +
+                '  if(!document.getElementById("__ldr"))return;/* module rendered itself */\n' +
+                '  throw new Error("No default export found — the file must export default a React component.");\n' +
+                '}\n' +
+                'var React=await import("react");\n' +
+                'var RDC=await import("react-dom/client");\n' +
+                'rootEl.textContent="";\n' +
+                'RDC.createRoot(rootEl).render(React.createElement(Component));\n' +
+                '}catch(e){showErr(e);}})();\n' +
+                '<\/script></body></html>';
+        }
+
+        /* HTML renders as-is; .jsx/.tsx goes through the shell builder. */
+        function prepareRenderable(content, name) {
+            return isJsxName(name) ? buildJsxShell(content, name) : content;
+        }
+
         /* A per-file home-screen icon in the same style as the app icon:
            black ground, the file's initial in white. Falls back silently
            to the app icon if canvas export is unavailable. */
@@ -130,7 +251,7 @@
                     var name;
                     try { name = decodeURIComponent(m[1]); } catch (e) { name = m[1]; }
                     var entry = loadSavedFile(name);
-                    if (entry && entry.c) { renderDocument(entry.c, name); return; }
+                    if (entry && entry.c) { renderDocument(prepareRenderable(entry.c, name), name); return; }
                     window.__missingFile = name;
                 } else {
                     try {
@@ -144,7 +265,7 @@
                         var label = (payload.n ? '"' + payload.n + '"' : 'a shared file') +
                             ' (' + Math.max(1, Math.round(payload.c.length / 1024)) + ' KB)';
                         if (window.confirm('Open ' + label + ' from this link? Only continue if you trust who sent it.')) {
-                            renderDocument(payload.c, payload.n);
+                            renderDocument(prepareRenderable(payload.c, payload.n), payload.n);
                             return;
                         }
                         /* declined — fall through to the landing page, no alert */
@@ -373,12 +494,13 @@
         <h4>Break Free from iOS Restrictions</h4>
         <ul>
             <li>Enjoy full interactivity with your local HTML content, just like on a desktop or Android device</li>
+            <li>Render self-contained React components (.jsx / .tsx) — transpiled right in your browser</li>
             <li>Save files on this device and pin them to your Home Screen for one-tap viewing</li>
         </ul>
 
         <hr>
         <article id="uploadFile">
-            <input type="file" id="fileInput" accept=".html,.htm,text/html">
+            <input type="file" id="fileInput" accept=".html,.htm,.jsx,.tsx,text/html">
             <button id="viewButton">View Rendered HTML</button>
             <button id="saveButton">Save to This Device</button>
             <button id="viewSourceButton" class="ghost">View Source Code</button>
@@ -464,7 +586,10 @@
                 });
             }, 500);
             setTimeout(function () {
-                document.querySelector('svg.logo').classList.add('floating');
+                /* null-guarded: this timer can outlive the landing page when a
+                   file is rendered in place before it fires */
+                var logo = document.querySelector('svg.logo');
+                if (logo) logo.classList.add('floating');
             }, 4000);
 
             /* ---------- dialogs & OS detection ---------- */
@@ -550,7 +675,7 @@
                            that guard's empty-hash reload. */
                         try { history.pushState(null, '', '#/f/' + encodeURIComponent(name)); }
                         catch (e) { location.hash = '#/f/' + encodeURIComponent(name); }
-                        renderDocument(entry.c, name);
+                        renderDocument(prepareRenderable(entry.c, name), name);
                     });
 
                     var linkBtn = document.createElement('button');
@@ -629,7 +754,7 @@
                     document.getElementById('renderText').textContent = 'Rendering "' + file.name + '"';
                     document.getElementById('uploadFile').style.display = 'none';
                     document.getElementById('refreshNote').style.display = 'block';
-                    setTimeout(function () { renderDocument(content, file.name); }, 5000);
+                    setTimeout(function () { renderDocument(prepareRenderable(content, file.name), file.name); }, 5000);
                 });
             });
 
