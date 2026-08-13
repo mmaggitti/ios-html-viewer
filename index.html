@@ -43,6 +43,20 @@
             return new TextDecoder().decode(bytes);
         }
 
+        /* STANDARD base64 with padding — the GitHub Contents API rejects the
+           unpadded url-safe variant the routes use */
+        function b64Std(str) {
+            var bytes = new TextEncoder().encode(str), bin = '';
+            for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+            return btoa(bin);
+        }
+
+        /* ---------- file store constants ---------- */
+        var TOKEN_KEY = 'ioshtmlviewer.ghtoken';
+        var REPO_API = 'https://api.github.com/repos/mmaggitti/ios-html-viewer';
+        var PAGES_BRANCH = 'gh-pages';
+        var STORE_DIR = 'files';
+
         function savedFileNames() {
             var names = [];
             try {
@@ -104,13 +118,23 @@
             return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
-        function buildJsxShell(source, name) {
+        /* basePrefix: '' when the shell replaces the app page via
+           document.write; '../' when it is uploaded as a hosted viewer page
+           under files/ (relative links must climb back to the app root, and
+           hosted pages get their per-file touch icon baked in since no
+           script injects one later). */
+        function buildJsxShell(source, name, basePrefix) {
+            basePrefix = basePrefix || '';
             var specs = scanImports(source);
             var safeName = escapeHtml(name || 'component.jsx');
             var head = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
                 '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
                 '<title>' + safeName + '</title>' +
-                '<link rel="manifest" href="site.webmanifest">';
+                '<link rel="manifest" href="' + basePrefix + 'site.webmanifest">';
+            if (basePrefix) {
+                var hostedIcon = makeFileIcon(name || '');
+                if (hostedIcon) head += '<link rel="apple-touch-icon" href="' + hostedIcon + '">';
+            }
 
             var unsupported = specs.filter(function (s) {
                 return s.charAt(0) === '.' || s.charAt(0) === '/' || s.indexOf('@/') === 0;
@@ -517,11 +541,20 @@
 
         body.pinning #uploadFile,
         body.pinning #savedSection,
+        body.pinning #storeSection,
         body.pinning .intro,
         body.pinning #sourceCodeSection,
         body.pinning #refreshNote,
         body.pinning #osNote,
         body.pinning #homeScreenWarning { display: none !important; }
+
+        #tokenInput {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .publish-status { color: #9a9a9a; }
+        .publish-status.live { color: #fff; font-weight: 600; }
 
         body.pinning #pinPanel { display: block; }
 
@@ -570,6 +603,7 @@
             <input type="file" id="fileInput">
             <button id="viewButton">View Rendered HTML</button>
             <button id="saveButton">Save to This Device</button>
+            <button id="uploadStoreButton">Upload to File Store</button>
             <button id="viewSourceButton" class="ghost">View Source Code</button>
             <button id="hideSourceButton" class="ghost" style="display: none;">Hide Source Code</button>
         </article>
@@ -598,6 +632,33 @@
                     If you don't open this app for a few weeks, iOS may clear them — just save the file
                     again. For small files, <em>Link</em> copies a self-contained URL that keeps working
                     regardless.</small></p>
+        </article>
+
+        <article id="storeSection">
+            <h4>File Store <small>(public)</small></h4>
+            <p class="hint"><small>Uploaded files are committed to the public GitHub repo and served at
+                    permanent URLs. Open a hosted file and use <strong>Share → Add to Home Screen</strong>
+                    for a bulletproof shortcut — it's a plain path URL, nothing for iOS to strip.
+                    Anyone with the link can view these files.</small></p>
+            <ul id="hostedList" class="saved-list"></ul>
+            <p id="hostedEmpty" class="hint"><small>No hosted files yet.</small></p>
+            <div id="tokenSetup">
+                <p class="hint"><small>To upload, paste a GitHub <strong>fine-grained personal access
+                        token</strong> scoped to only the <code>ios-html-viewer</code> repository with
+                        <strong>Contents: Read and write</strong> permission (create it at github.com →
+                        Settings → Developer settings → Fine-grained tokens). GitHub shows the token
+                        exactly once — save it in your password manager first, then paste it here.</small></p>
+                <input type="password" id="tokenInput" placeholder="github_pat_…" autocomplete="off">
+                <button id="tokenSave">Save Token</button>
+            </div>
+            <div id="tokenSet" style="display:none">
+                <p class="hint"><small>Token saved on this device: <code id="tokenMask"></code></small></p>
+                <button id="tokenCopy" class="ghost">Copy Token</button>
+                <button id="tokenRemove" class="ghost">Remove Token</button>
+            </div>
+            <p class="hint"><small>Heads-up: rendered files and portable links you accept run with access
+                    to this site's storage — including this token. Only open links you trust. The token is
+                    scoped to this one public repository, so that is the full blast radius.</small></p>
         </article>
 
         <article id="pinPanel">
@@ -795,6 +856,213 @@
                 });
             }
 
+            /* ---------- file store ---------- */
+            function getToken() {
+                try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; }
+            }
+
+            function ghFetch(path, opts) {
+                opts = opts || {};
+                var headers = { 'Accept': 'application/vnd.github+json' };
+                var t = getToken();
+                if (t) headers['Authorization'] = 'Bearer ' + t;
+                if (opts.headers) for (var k in opts.headers) headers[k] = opts.headers[k];
+                opts.headers = headers;
+                return fetch(REPO_API + path, opts);
+            }
+
+            function encodePath(p) {
+                return p.split('/').map(encodeURIComponent).join('/');
+            }
+
+            function storeViewUrl(name) {
+                return STORE_DIR + '/' + encodeURIComponent(name) + (isJsxName(name) ? '.html' : '');
+            }
+
+            async function putFile(path, contentStr, message) {
+                var sha = null;
+                var g = await ghFetch('/contents/' + encodePath(path) + '?ref=' + PAGES_BRANCH);
+                if (g.ok) sha = (await g.json()).sha;
+                var body = { message: message, content: b64Std(contentStr), branch: PAGES_BRANCH };
+                if (sha) body.sha = sha;
+                var r = await ghFetch('/contents/' + encodePath(path), {
+                    method: 'PUT', body: JSON.stringify(body)
+                });
+                if (!r.ok) throw new Error('GitHub API ' + r.status + ': ' + (await r.text()).slice(0, 180));
+            }
+
+            async function deleteFile(path, message) {
+                var g = await ghFetch('/contents/' + encodePath(path) + '?ref=' + PAGES_BRANCH);
+                if (!g.ok) return; /* already gone */
+                var sha = (await g.json()).sha;
+                var r = await ghFetch('/contents/' + encodePath(path), {
+                    method: 'DELETE',
+                    body: JSON.stringify({ message: message, sha: sha, branch: PAGES_BRANCH })
+                });
+                if (!r.ok) throw new Error('GitHub API ' + r.status);
+            }
+
+            var publishing = {};
+
+            /* poll the served URL until the Pages rebuild makes it live */
+            function watchPublish(name) {
+                publishing[name] = true;
+                var tries = 0;
+                var timer = setInterval(function () {
+                    tries++;
+                    fetch(storeViewUrl(name) + '?_=' + tries + '_' + Math.floor(performance.now()), { cache: 'no-store' })
+                        .then(function (r) {
+                            if (r.ok) {
+                                clearInterval(timer);
+                                delete publishing[name];
+                                refreshHostedList();
+                            } else if (tries > 20) { clearInterval(timer); delete publishing[name]; }
+                        }, function () { if (tries > 20) { clearInterval(timer); delete publishing[name]; } });
+                }, 8000);
+            }
+
+            async function uploadToStore(file, content) {
+                if (!getToken()) {
+                    showAlert('Set up the File Store first — paste your GitHub token in the File Store section below.');
+                    return;
+                }
+                try {
+                    await putFile(STORE_DIR + '/' + file.name, content,
+                        'Upload ' + file.name + ' via iOS HTML Viewer');
+                    if (isJsxName(file.name)) {
+                        await putFile(STORE_DIR + '/' + file.name + '.html',
+                            buildJsxShell(content, file.name, '../'),
+                            'Viewer page for ' + file.name);
+                    }
+                    watchPublish(file.name);
+                    refreshHostedList();
+                    showAlert('Uploaded "' + file.name + '" — committed to the repo. It goes live at its public URL within about a minute; its row below will read "live". Open it there, then Share → Add to Home Screen for a shortcut that cannot break.');
+                } catch (e) {
+                    showAlert('Upload failed: ' + (e && e.message || e));
+                }
+            }
+
+            function renderHostedList(items) {
+                var list = document.getElementById('hostedList');
+                var empty = document.getElementById('hostedEmpty');
+                list.textContent = '';
+                if (!items || !items.length) {
+                    empty.style.display = 'block';
+                    empty.querySelector('small').textContent =
+                        items === null ? 'Hosted file list unavailable right now.' : 'No hosted files yet.';
+                    return;
+                }
+                empty.style.display = 'none';
+                var names = {};
+                items.forEach(function (f) { names[f.name] = true; });
+                items.forEach(function (f) {
+                    /* fold .jsx.html/.tsx.html companions into their primary row */
+                    var m = f.name.match(/^(.+\.(?:jsx|tsx))\.html$/i);
+                    if (m && names[m[1]]) return;
+
+                    var li = document.createElement('li');
+                    var meta = document.createElement('div');
+                    meta.className = 'file-meta';
+                    var nm = document.createElement('div');
+                    nm.className = 'file-name';
+                    nm.textContent = f.name;
+                    var det = document.createElement('small');
+                    det.textContent = formatSize(f.size || 0) + ' · ';
+                    var status = document.createElement('span');
+                    status.className = 'publish-status' + (publishing[f.name] ? '' : ' live');
+                    status.textContent = publishing[f.name] ? 'publishing…' : 'live';
+                    det.appendChild(status);
+                    meta.appendChild(nm);
+                    meta.appendChild(det);
+
+                    var actions = document.createElement('div');
+                    actions.className = 'file-actions';
+
+                    var openBtn = document.createElement('button');
+                    openBtn.textContent = 'Open';
+                    openBtn.addEventListener('click', function () {
+                        location.assign(storeViewUrl(f.name));
+                    });
+
+                    var delBtn = document.createElement('button');
+                    delBtn.textContent = 'Delete';
+                    delBtn.className = 'ghost';
+                    delBtn.addEventListener('click', async function () {
+                        if (!getToken()) { showAlert('Deleting needs the File Store token.'); return; }
+                        if (!window.confirm('Delete "' + f.name + '" from the public file store?')) return;
+                        try {
+                            await deleteFile(STORE_DIR + '/' + f.name, 'Delete ' + f.name + ' via iOS HTML Viewer');
+                            if (isJsxName(f.name)) {
+                                await deleteFile(STORE_DIR + '/' + f.name + '.html', 'Delete viewer page for ' + f.name);
+                            }
+                            refreshHostedList();
+                        } catch (e) { showAlert('Delete failed: ' + (e && e.message || e)); }
+                    });
+
+                    actions.appendChild(openBtn);
+                    actions.appendChild(delBtn);
+                    li.appendChild(meta);
+                    li.appendChild(actions);
+                    list.appendChild(li);
+                });
+            }
+
+            function refreshHostedList() {
+                ghFetch('/contents/' + STORE_DIR + '?ref=' + PAGES_BRANCH).then(function (r) {
+                    if (!r.ok) throw new Error('list ' + r.status);
+                    return r.json();
+                }).then(function (items) {
+                    renderHostedList(items.filter(function (f) {
+                        return f.type === 'file' && f.name !== 'README.md';
+                    }));
+                }).catch(function () { renderHostedList(null); });
+            }
+
+            function maskToken(t) {
+                return t.length > 14 ? t.slice(0, 10) + '…' + t.slice(-4) : t.slice(0, 4) + '…';
+            }
+
+            function updateTokenUi() {
+                var t = getToken();
+                document.getElementById('tokenSetup').style.display = t ? 'none' : 'block';
+                document.getElementById('tokenSet').style.display = t ? 'block' : 'none';
+                if (t) document.getElementById('tokenMask').textContent = maskToken(t);
+            }
+
+            document.getElementById('tokenSave').addEventListener('click', function () {
+                var v = document.getElementById('tokenInput').value.trim();
+                if (!v) { showAlert('Paste the token first.'); return; }
+                try { localStorage.setItem(TOKEN_KEY, v); } catch (e) {
+                    showAlert('Could not store the token — storage unavailable.'); return;
+                }
+                document.getElementById('tokenInput').value = '';
+                updateTokenUi();
+                refreshHostedList();
+                showAlert('Token saved on this device. Keep the primary copy in your password manager — the Copy button here is your backup.');
+            });
+
+            document.getElementById('tokenCopy').addEventListener('click', function () {
+                var t = getToken();
+                if (!t) return;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(t).then(function () {
+                        showAlert('Token copied to the clipboard — paste it into your password manager.');
+                    }, function () { window.prompt('Copy your token:', t); });
+                } else {
+                    window.prompt('Copy your token:', t);
+                }
+            });
+
+            document.getElementById('tokenRemove').addEventListener('click', function () {
+                if (!window.confirm('Remove the token from this device? Uploading and deleting will stop working until you paste it again.')) return;
+                try { localStorage.removeItem(TOKEN_KEY); } catch (e) { }
+                updateTokenUi();
+            });
+
+            document.getElementById('uploadStoreButton').addEventListener('click', function () {
+                withSelectedFile(function (file, content) { uploadToStore(file, content); });
+            });
+
             /* ---------- pin mode ----------
                Staging Add-to-Home-Screen from the app's own page keeps the
                manifest's display:"browser" in effect, so the shortcut opens
@@ -854,6 +1122,8 @@
             function boot() {
                 detectOS();
                 refreshSavedList();
+                updateTokenUi();
+                refreshHostedList();
                 if (window.__missingFile) {
                     showAlert('No file named "' + window.__missingFile + '" is saved on this device. It may have been deleted, cleared by iOS after long inactivity, or saved on a different device. If this opened from a Home Screen shortcut with no Safari address bar (a standalone app), that app has separate storage and cannot see files saved in Safari — delete the shortcut and re-add it in Safari with the Pin button.');
                     window.__missingFile = null;
