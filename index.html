@@ -109,7 +109,8 @@
             var safeName = escapeHtml(name || 'component.jsx');
             var head = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
                 '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-                '<title>' + safeName + '</title>';
+                '<title>' + safeName + '</title>' +
+                '<link rel="manifest" href="site.webmanifest">';
 
             var unsupported = specs.filter(function (s) {
                 return s.charAt(0) === '.' || s.charAt(0) === '/' || s.indexOf('@/') === 0;
@@ -220,6 +221,17 @@
                         link.href = icon;
                         document.head.appendChild(link);
                     }
+                }
+                /* Without a manifest, iOS 17+ turns Add-to-Home-Screen into an
+                   ISOLATED standalone app that can't see Safari's saved files.
+                   The written document wiped ours — re-inject it (absolute URL,
+                   in case the file sets its own <base>), unless the file
+                   brought its own manifest. */
+                if (document.head && !document.querySelector('link[rel="manifest"]')) {
+                    var mf = document.createElement('link');
+                    mf.rel = 'manifest';
+                    mf.href = new URL('site.webmanifest', location.href.split('#')[0]).href;
+                    document.head.appendChild(mf);
                 }
                 /* document.open() wiped all window listeners — re-arm the
                    route guard so navigating to another #/f/ or #/d/ URL from
@@ -462,6 +474,22 @@
         }
 
         .hint small { color: #9a9a9a; }
+
+        /* Pin mode: stage Add-to-Home-Screen from the app's own page so its
+           manifest (display: browser) stays in effect */
+        #pinPanel { display: none; }
+
+        body.pinning #uploadFile,
+        body.pinning #savedSection,
+        body.pinning .intro,
+        body.pinning #sourceCodeSection,
+        body.pinning #refreshNote,
+        body.pinning #osNote,
+        body.pinning #homeScreenWarning { display: none !important; }
+
+        body.pinning #pinPanel { display: block; }
+
+        #pinPanel button { margin: 10px 5px 0 0; }
     </style>
 </head>
 
@@ -491,8 +519,8 @@
         <!-- Home screen warning for iOS apps running from home screen -->
         <article id="homeScreenWarning"></article>
 
-        <h4>Break Free from iOS Restrictions</h4>
-        <ul>
+        <h4 class="intro">Break Free from iOS Restrictions</h4>
+        <ul class="intro">
             <li>Enjoy full interactivity with your local HTML content, just like on a desktop or Android device</li>
             <li>Render self-contained React components (.jsx / .tsx) — transpiled right in your browser</li>
             <li>Save files on this device and pin them to your Home Screen for one-tap viewing</li>
@@ -527,13 +555,22 @@
         <article id="savedSection" style="display: none;">
             <h4>Saved Files</h4>
             <ul id="savedList" class="saved-list"></ul>
-            <p class="hint"><small><strong>Pin to Home Screen:</strong> open a saved file, then tap
-                    <strong>Share&nbsp;→&nbsp;Add to Home Screen</strong>. The shortcut reopens that file
-                    directly, with its own icon.</small></p>
+            <p class="hint"><small><strong>Pin to Home Screen:</strong> tap <strong>Pin</strong> next to a
+                    saved file, then <strong>Share&nbsp;→&nbsp;Add to Home Screen</strong>. The shortcut
+                    reopens that file directly in Safari, with its own icon.</small></p>
             <p class="hint"><small>Saved files live in Safari's storage for this site, on this device only.
                     If you don't open this app for a few weeks, iOS may clear them — just save the file
                     again. For small files, <em>Link</em> copies a self-contained URL that keeps working
                     regardless.</small></p>
+        </article>
+
+        <article id="pinPanel">
+            <h4>Ready to Pin</h4>
+            <p><strong id="pinName"></strong></p>
+            <p>Now tap <strong>Share → Add to Home Screen</strong>. The shortcut will reopen this file
+                directly in Safari, with its own icon.</p>
+            <button id="pinOpenButton">Open the File Now</button>
+            <button id="pinCancelButton" class="ghost">Cancel</button>
         </article>
 
         <hr>
@@ -616,7 +653,7 @@
                 if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
                     os = 'iOS';
                     if (window.navigator.standalone === true) {
-                        homeScreenWarning.innerHTML = '<small>You are running this as a standalone Home Screen app, which keeps its storage separate from Safari — files saved here will not appear in Safari and vice versa. For the best experience (and working file shortcuts), open this page in Safari and re-add your shortcuts from there.</small>';
+                        homeScreenWarning.innerHTML = '<small>You are running this as a standalone Home Screen app, which keeps its storage separate from Safari — files saved here will not appear in Safari and vice versa. Delete this Home Screen icon, open the page in Safari, and re-add shortcuts with the <strong>Pin</strong> button next to each saved file.</small>';
                         homeScreenWarning.style.display = 'block';
                     }
                 } else if (/android/i.test(userAgent)) {
@@ -681,6 +718,10 @@
                         renderDocument(prepareRenderable(entry.c, name), name);
                     });
 
+                    var pinBtn = document.createElement('button');
+                    pinBtn.textContent = 'Pin';
+                    pinBtn.addEventListener('click', function () { enterPinMode(name, entry); });
+
                     var linkBtn = document.createElement('button');
                     linkBtn.textContent = 'Link';
                     linkBtn.className = 'ghost';
@@ -711,6 +752,7 @@
                     });
 
                     actions.appendChild(openBtn);
+                    actions.appendChild(pinBtn);
                     actions.appendChild(linkBtn);
                     actions.appendChild(delBtn);
                     li.appendChild(meta);
@@ -719,12 +761,62 @@
                 });
             }
 
+            /* ---------- pin mode ----------
+               Staging Add-to-Home-Screen from the app's own page keeps the
+               manifest's display:"browser" in effect, so the shortcut opens
+               in Safari and shares its storage. Pinning from a RENDERED file
+               loses the manifest (document.write) and iOS 17+ then creates an
+               isolated standalone app — the bug this flow exists to avoid. */
+            var pinnedFile = null;
+
+            function enterPinMode(name, entry) {
+                pinnedFile = { name: name, entry: entry };
+                try { history.pushState(null, '', '#/f/' + encodeURIComponent(name)); } catch (e) { }
+                document.title = name;
+                var icon = makeFileIcon(name);
+                if (icon) {
+                    var link = document.createElement('link');
+                    link.rel = 'apple-touch-icon';
+                    link.id = 'pinIcon';
+                    link.href = icon;
+                    document.head.appendChild(link);
+                }
+                document.getElementById('pinName').textContent = name;
+                document.body.classList.add('pinning');
+                window.scrollTo(0, 0);
+            }
+
+            function exitPinMode() {
+                if (!document.body.classList.contains('pinning')) return;
+                pinnedFile = null;
+                document.body.classList.remove('pinning');
+                document.title = 'iOS HTML Viewer';
+                var ic = document.getElementById('pinIcon');
+                if (ic) ic.remove();
+                if (/^#\//.test(location.hash)) {
+                    try { history.pushState(null, '', location.pathname); } catch (e) { }
+                }
+            }
+
+            document.getElementById('pinOpenButton').addEventListener('click', function () {
+                if (pinnedFile) {
+                    renderDocument(prepareRenderable(pinnedFile.entry.c, pinnedFile.name), pinnedFile.name);
+                }
+            });
+
+            document.getElementById('pinCancelButton').addEventListener('click', exitPinMode);
+
+            /* browser Back out of pin mode (pushState entry) restores the UI */
+            window.addEventListener('hashchange', function () {
+                if (!/^#\//.test(location.hash)) exitPinMode();
+            });
+
             /* ---------- boot ---------- */
             function boot() {
                 detectOS();
                 refreshSavedList();
                 if (window.__missingFile) {
-                    showAlert('No file named "' + window.__missingFile + '" is saved on this device. It may have been deleted, cleared by iOS after long inactivity, or saved on a different device. Save it again to fix this shortcut.');
+                    showAlert('No file named "' + window.__missingFile + '" is saved on this device. It may have been deleted, cleared by iOS after long inactivity, or saved on a different device. If this opened from a Home Screen shortcut with no Safari address bar (a standalone app), that app has separate storage and cannot see files saved in Safari — delete the shortcut and re-add it in Safari with the Pin button.');
                     window.__missingFile = null;
                 }
                 if (window.__badLink) {
@@ -773,7 +865,7 @@
                         navigator.storage.persist().catch(function () { });
                     }
                     refreshSavedList();
-                    showAlert('Saved "' + file.name + '" on this device. Tap Open below, then Share → Add to Home Screen to pin it.');
+                    showAlert('Saved "' + file.name + '" on this device. Tap Pin next to it below to add a Home Screen shortcut.');
                 });
             });
 
