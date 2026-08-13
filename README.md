@@ -17,6 +17,7 @@ In addition to rendering your HTML files, iOS HTML Viewer offers an optional fea
 ## Key Features
 
 - **Full HTML Rendering**: Supports external CSS and JavaScript, providing a desktop-like viewing experience on iOS.
+- **React Component Rendering**: Self-contained `.jsx`/`.tsx` files (the shape Claude artifacts take) are transpiled in your browser with Sucrase and rendered live — React, common npm libraries (recharts, lucide-react, framer-motion, d3, …) and Tailwind classes are loaded on the fly from CDNs. Project-local imports (shadcn/ui `@/…`, relative paths) are not supported and get a clear explanation instead.
 - **View Source Code with Syntax Highlighting**: Optionally view the raw HTML source code of your uploaded file, complete with color syntax highlighting.
 - **Ad-Free and Subscription-Free**: No ads or hidden costs—just a simple, effective solution for viewing HTML files.
 - **Privacy First**: Your uploaded HTML files are processed locally on your device, ensuring complete privacy and security.
@@ -50,5 +51,8 @@ Changes from upstream:
   container *separate* from Safari, so shortcuts must open in Safari to see saved files.
 - Storage caveat: Safari deletes site storage after ~7 days of no visits (ITP). Regular use
   resets the clock; `navigator.storage.persist()` is requested; portable links are immune.
+- **JSX/TSX rendering** (in-browser Sucrase transpile → import map → esm.sh → Blob-module
+  mount). Rendering React files needs the network at view time; HTML files only need it for
+  the app shell.
 
 To redeploy after changes, push to the `gh-pages` branch.
