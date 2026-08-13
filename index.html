@@ -500,7 +500,10 @@
 
         <hr>
         <article id="uploadFile">
-            <input type="file" id="fileInput" accept=".html,.htm,.jsx,.tsx,text/html">
+            <!-- deliberately NO accept filter: iOS's Files picker greys out
+                 extensions it can't map to a registered type (.jsx/.tsx),
+                 so filtering here makes React files unselectable -->
+            <input type="file" id="fileInput">
             <button id="viewButton">View Rendered HTML</button>
             <button id="saveButton">Save to This Device</button>
             <button id="viewSourceButton" class="ghost">View Source Code</button>
