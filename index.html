@@ -141,7 +141,6 @@
 
             return head +
                 '<script type="importmap">' + mapJson + '<\/script>' +
-                '<script src="https://cdn.tailwindcss.com"><\/script>' +
                 '</head><body>' +
                 '<div id="root"><p id="__ldr" style="font-family:-apple-system,sans-serif;color:#888;padding:24px">' +
                 'Loading component and libraries…</p></div>' +
@@ -156,6 +155,12 @@
                 'p.style.display="block";}\n' +
                 'window.addEventListener("error",function(e){showErr(e.error||e.message);});\n' +
                 'window.addEventListener("unhandledrejection",function(e){showErr(e.reason);});\n' +
+                '/* Tailwind injected dynamically: script-inserted scripts are async,\n' +
+                '   so a slow CDN can never stall this document.write-created parser\n' +
+                '   (a parser-blocking <script src> in the head hangs it in Chrome).\n' +
+                '   The Play CDN watches the DOM, so loading late/parallel is fine. */\n' +
+                'var tw=document.createElement("script");tw.src="https://cdn.tailwindcss.com";\n' +
+                'document.head.appendChild(tw);\n' +
                 '(async function(){try{\n' +
                 'var s=window.__SRC__.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";\n' +
                 'var bin=atob(s),by=new Uint8Array(bin.length);' +
@@ -234,40 +239,71 @@
                     document.head.appendChild(mf);
                 }
                 /* document.open() wiped all window listeners — re-arm the
-                   route guard so navigating to another #/f/ or #/d/ URL from
-                   this rendered document still works. Also reload when the
-                   hash EMPTIES: after Open pushes "#/f/name", tapping Back is
-                   a same-document traversal to "" that would otherwise leave
-                   the rendered file on screen under the landing URL. A file's
+                   route guard so navigating to another route URL from this
+                   rendered document still works. Also reload when the hash
+                   EMPTIES: after Open pushes "?f=name", tapping Back is a
+                   same-document traversal that would otherwise leave the
+                   rendered file on screen under the landing URL. A file's
                    own in-page "#anchor" links match neither case and work
-                   normally. */
-                window.addEventListener('hashchange', function () {
-                    if (/^#\/(f|d)\//.test(location.hash) || location.hash === '') location.reload();
-                });
+                   normally. popstate covers query-only traversals, which
+                   never fire hashchange. */
+                var navGuard = function () {
+                    var p = new URLSearchParams(location.search);
+                    var hasRoute = p.get('f') != null || p.get('d') != null ||
+                        /^#\/(f|d)\//.test(location.hash);
+                    if (hasRoute || location.hash === '') location.reload();
+                };
+                window.addEventListener('hashchange', navGuard);
+                window.addEventListener('popstate', navGuard);
             } catch (e) { /* cosmetic only */ }
         }
 
         (function route() {
+            /* Saved-file routes live in the QUERY STRING first (?f=name):
+               iOS web clips strip #fragments from Home Screen shortcuts,
+               which silently sent every pinned file back to the landing
+               page. The #/f/ and #/d/ hash forms remain for older links,
+               and portable-link payloads stay hash-based on purpose — query
+               strings travel to the server, and GitHub Pages rejects very
+               long URLs, while fragments never leave the device. */
+            var params = new URLSearchParams(location.search);
             var m = location.hash.match(/^#\/f\/(.+)$/);
-            var d = m ? null : location.hash.match(/^#\/d\/(.+)$/);
-            if (!m && !d) return;
+            var dh = location.hash.match(/^#\/d\/(.+)$/);
+            var name = null, data = null;
+            if (params.get('f') != null) name = params.get('f');
+            else if (m) {
+                /* decodeURIComponent throws on truncated escapes (a mangled
+                   shortcut URL) and on Firefox's pre-decoded location.hash
+                   when the name holds a literal "%" — fall back to the raw
+                   fragment so neither can strand the page blank. */
+                try { name = decodeURIComponent(m[1]); } catch (e) { name = m[1]; }
+            }
+            if (name == null) {
+                if (params.get('d') != null) data = params.get('d');
+                else if (dh) data = dh[1];
+            }
+            if (name == null && data == null) return;
             document.documentElement.classList.add('routing');
             window.__routed = true;
-            document.addEventListener('DOMContentLoaded', function () {
-                if (m) {
-                    /* decodeURIComponent throws on truncated escapes (a
-                       mangled shortcut URL) and on Firefox's pre-decoded
-                       location.hash when the name holds a literal "%" — fall
-                       back to the raw fragment so neither can strand the page
-                       blank. */
-                    var name;
-                    try { name = decodeURIComponent(m[1]); } catch (e) { name = m[1]; }
+            /* Render only after window load, never at DOMContentLoaded:
+               document.open() while the landing page is still loading aborts
+               that load, and Chromium then silently drops <script
+               type="module"> elements written into the reopened document —
+               the JSX shell's bootstrap never runs (classic scripts still
+               do, making it maddening to spot). The .routing class keeps the
+               landing page invisible until then. */
+            var whenLoaded = function (fn) {
+                if (document.readyState === 'complete') { setTimeout(fn, 0); return; }
+                window.addEventListener('load', function () { setTimeout(fn, 0); });
+            };
+            whenLoaded(function () {
+                if (name != null) {
                     var entry = loadSavedFile(name);
                     if (entry && entry.c) { renderDocument(prepareRenderable(entry.c, name), name); return; }
                     window.__missingFile = name;
                 } else {
                     try {
-                        var payload = JSON.parse(b64urlDecode(d[1]));
+                        var payload = JSON.parse(b64urlDecode(data));
                         if (!payload || typeof payload.c !== 'string') throw new Error('bad payload');
                         /* Portable links carry executable HTML from whoever
                            crafted the URL, and every GitHub Pages project on
@@ -707,13 +743,11 @@
                     openBtn.textContent = 'Open';
                     openBtn.addEventListener('click', function () {
                         /* pushState sets the shortcut-able URL without firing
-                           hashchange — a plain hash assignment would queue a
-                           hashchange task that the re-armed route guard inside
-                           renderDocument() would catch, forcing a pointless
-                           reload right after the in-place render. push (not
-                           replace) so Back returns to the landing page via
-                           that guard's empty-hash reload. */
-                        try { history.pushState(null, '', '#/f/' + encodeURIComponent(name)); }
+                           navigation events the re-armed route guard would
+                           catch. Query form, not hash — iOS web clips strip
+                           fragments. push (not replace) so Back returns to
+                           the landing page via that guard. */
+                        try { history.pushState(null, '', '?f=' + encodeURIComponent(name)); }
                         catch (e) { location.hash = '#/f/' + encodeURIComponent(name); }
                         renderDocument(prepareRenderable(entry.c, name), name);
                     });
@@ -771,7 +805,8 @@
 
             function enterPinMode(name, entry) {
                 pinnedFile = { name: name, entry: entry };
-                try { history.pushState(null, '', '#/f/' + encodeURIComponent(name)); } catch (e) { }
+                /* query form — iOS web clips preserve ?f= but strip #/f/ */
+                try { history.pushState(null, '', '?f=' + encodeURIComponent(name)); } catch (e) { }
                 document.title = name;
                 var icon = makeFileIcon(name);
                 if (icon) {
@@ -793,7 +828,7 @@
                 document.title = 'iOS HTML Viewer';
                 var ic = document.getElementById('pinIcon');
                 if (ic) ic.remove();
-                if (/^#\//.test(location.hash)) {
+                if (location.search || /^#\//.test(location.hash)) {
                     try { history.pushState(null, '', location.pathname); } catch (e) { }
                 }
             }
@@ -806,10 +841,14 @@
 
             document.getElementById('pinCancelButton').addEventListener('click', exitPinMode);
 
-            /* browser Back out of pin mode (pushState entry) restores the UI */
-            window.addEventListener('hashchange', function () {
-                if (!/^#\//.test(location.hash)) exitPinMode();
-            });
+            /* browser Back out of pin mode (pushState entry) restores the UI;
+               popstate covers query-only traversals */
+            function pinNavCheck() {
+                var p = new URLSearchParams(location.search);
+                if (p.get('f') == null && !/^#\//.test(location.hash)) exitPinMode();
+            }
+            window.addEventListener('hashchange', pinNavCheck);
+            window.addEventListener('popstate', pinNavCheck);
 
             /* ---------- boot ---------- */
             function boot() {
