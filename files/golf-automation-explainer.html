@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Four reports, one problem — golf course automation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Karla:wght@400;500;600&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   PAPER — warm document style
+   Accent meanings for THIS document:
+     rose → the blocker — what fails, and what it costs
+     sage → the viable path — what actually works today
+     sky  → the open problem — research frontier, gated detail
+     sand → emphasis, list bullets, active nav
+   ============================================================ */
+
+:root{
+  color-scheme: light only;
+
+  --paper:#F6F1E7;
+  --raised:#FCFAF5;
+
+  --ink:#3E3A33;
+  --ink-mid:#6B665C;
+  --ink-soft:#736D5F;
+  --ink-faint:#9A9488;
+
+  --line:#E3DBCB;
+  --line-soft:#EDE6D8;
+
+  --rose:#C99A93;
+  --sage:#9DB39A;
+  --sky:#A3B8C9;
+  --sand:#DCC49A;
+
+  --rose-wash:#F2E2DF;
+  --sage-wash:#E6EDE4;
+  --sky-wash:#E5EBF0;
+  --sand-wash:#F1EADC;
+
+  --hand:"Caveat","Bradley Hand","Segoe Script",cursive;
+  --print:"Patrick Hand","Comic Sans MS",cursive;
+  --body:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;
+
+  --maxw:760px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--paper)}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--body);font-size:16.5px;line-height:1.62;
+  -webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;
+}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--sky);outline-offset:3px;border-radius:3px}
+
+/* ---------- masthead ---------- */
+header.top{padding:34px 0 30px}
+.meta{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);display:flex;flex-wrap:wrap;gap:2px 14px;margin-bottom:16px}
+.meta span::after{content:" ·";color:var(--line)}
+.meta span:last-child::after{content:""}
+.kicker{font-family:var(--print);font-size:16px;color:var(--ink-mid);margin:0 0 2px}
+h1{font-family:var(--hand);font-weight:700;font-size:clamp(46px,11vw,74px);line-height:.94;margin:0}
+.thesis{max-width:54ch;margin:20px 0 0;font-size:16.5px;color:var(--ink-mid)}
+.thesis b{color:var(--ink);font-weight:600}
+
+/* ---------- sticky nav ---------- */
+nav{position:sticky;top:0;z-index:40;background:rgba(246,241,231,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;overflow-x:auto;scrollbar-width:none;padding-top:0;padding-bottom:0}
+nav .wrap::-webkit-scrollbar{display:none}
+nav a{font-family:var(--print);font-size:15px;color:var(--ink-soft);text-decoration:none;padding:11px 13px;white-space:nowrap;border-bottom:2px solid transparent}
+nav a:hover{color:var(--ink-mid)}
+nav a.on{color:var(--ink);border-bottom-color:var(--sand)}
+
+/* ---------- sections ---------- */
+section{padding:44px 0 4px}
+section + section{border-top:1px solid var(--line-soft)}
+h2{font-family:var(--hand);font-weight:700;font-size:clamp(32px,7vw,44px);line-height:1;margin:0}
+.sec-sub{color:var(--ink-mid);font-size:15.5px;margin:10px 0 26px;max-width:58ch}
+
+/* ---------- plain list ---------- */
+ul.plain{list-style:none;padding:0;margin:0;border-top:1px solid var(--line)}
+ul.plain li{padding:12px 0 12px 20px;border-bottom:1px solid var(--line-soft);font-size:15.5px;position:relative;color:var(--ink-mid)}
+ul.plain li::before{content:"";position:absolute;left:1px;top:1.35em;width:8px;height:2px;border-radius:2px;background:var(--sand)}
+ul.plain li b{color:var(--ink);font-weight:600}
+
+/* ---------- entry rows ---------- */
+.entries{border-top:1px solid var(--line)}
+.entry{display:grid;grid-template-columns:158px 1fr;gap:18px;padding:14px 2px;border-bottom:1px solid var(--line-soft);align-items:start}
+.entry:last-child{border-bottom:0}
+.entry .n{font-family:var(--hand);font-weight:700;font-size:24px;line-height:1.05;color:var(--ink)}
+.entry .k{font-family:var(--print);font-size:13px;color:var(--ink-soft);margin-top:2px}
+.entry p{margin:0;font-size:15.5px;color:var(--ink-mid)}
+.entry p + p{margin-top:5px}
+@media(max-width:560px){.entry{grid-template-columns:1fr;gap:4px}.entry .k{margin-bottom:4px}}
+
+/* ---------- duo boxes ---------- */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:620px){.duo{grid-template-columns:1fr}}
+.box{background:var(--raised);border:1px solid var(--line);border-radius:6px;padding:18px 18px 20px;border-top:3px solid var(--line)}
+.box.a{border-top-color:var(--sage)}
+.box.b{border-top-color:var(--rose)}
+.box h3{font-family:var(--hand);font-weight:700;font-size:28px;line-height:1;margin:0 0 10px}
+.box p{margin:0 0 8px;font-size:15px;color:var(--ink-mid)}
+.box p:last-child{margin-bottom:0}
+
+/* ---------- margin note ---------- */
+.note{font-family:var(--print);font-size:15.5px;color:var(--ink-mid);border-left:2px solid var(--sand);padding-left:12px;margin:20px 0 0;line-height:1.5}
+
+/* ---------- numbered steps ---------- */
+.steps{border-top:1px solid var(--line)}
+.step{border-bottom:1px solid var(--line)}
+.step-btn{width:100%;background:none;border:0;color:inherit;font:inherit;display:grid;grid-template-columns:30px 1fr auto;gap:12px;align-items:center;padding:14px 6px;text-align:left;cursor:pointer;border-radius:4px}
+.step-btn:hover{background:var(--raised)}
+.step-n{font-family:var(--hand);font-weight:700;font-size:22px;color:var(--ink-soft);line-height:1}
+.step-t{font-size:16px;font-weight:500}
+.pill{font-family:var(--print);font-size:13px;color:var(--ink-mid);padding:1px 9px;border-radius:999px;white-space:nowrap}
+.pill.a{background:var(--sage-wash)}
+.pill.b{background:var(--rose-wash)}
+.pill.c{background:var(--sky-wash)}
+.step-body{display:none;padding:0 6px 18px 42px;color:var(--ink-mid);font-size:15.5px}
+.step.open .step-body{display:block}
+.step-body p{margin:0 0 9px}
+.chev{font-family:var(--print);font-size:17px;color:var(--ink-soft)}
+@media(max-width:520px){
+  .step-btn{grid-template-columns:24px 1fr;gap:10px}
+  .step-btn .pill{grid-column:2;justify-self:start;margin-top:2px}
+  .chev{display:none}
+  .step-body{padding-left:34px}
+}
+
+/* ---------- data rows ---------- */
+.rows{border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:1fr 82px 74px 66px;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line-soft);align-items:baseline}
+.row.head{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);border-bottom-color:var(--line)}
+.row .t{font-size:15.5px}
+.row .b,.row .c,.row .d{font-family:var(--print);font-size:14.5px;color:var(--ink-mid)}
+.row .d{color:var(--ink-soft)}
+@media(max-width:600px){
+  .row{grid-template-columns:1fr auto;gap:2px 12px}
+  .row .c{grid-column:2;text-align:right}
+  .row .b{grid-column:1;font-size:13.5px;color:var(--ink-soft)}
+  .row .d{grid-column:2;text-align:right;font-size:13.5px}
+  .row.head{display:none}
+}
+
+/* ---------- disclosure ---------- */
+.gate{background:var(--raised);border:1px solid var(--line);border-left:3px solid var(--sky);border-radius:6px;padding:18px 20px 20px}
+.gate .lead{font-family:var(--print);font-size:14.5px;color:var(--ink-soft);margin:0 0 4px}
+.gate h3{font-family:var(--hand);font-weight:700;font-size:28px;line-height:1;margin:0 0 8px}
+.gate .blurb{margin:0 0 14px;font-size:15px;color:var(--ink-mid)}
+.gate button{font-family:var(--print);font-size:15px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:6px 16px;cursor:pointer}
+.gate button:hover{background:var(--sand-wash)}
+.gate .gate-body{display:none;margin-top:16px;border-top:1px solid var(--line-soft);padding-top:4px}
+.gate.open .gate-body{display:block}
+
+/* ---------- definition pairs ---------- */
+.gloss{display:grid;grid-template-columns:1fr 1fr;gap:0 26px}
+@media(max-width:620px){.gloss{grid-template-columns:1fr}}
+.gloss dl{margin:0}
+.gloss dt{font-family:var(--hand);font-weight:700;font-size:21px;margin-top:14px;color:var(--ink)}
+.gloss dd{margin:0;font-size:15px;color:var(--ink-mid)}
+
+/* ---------- footer ---------- */
+footer{padding:38px 0 60px;color:var(--ink-soft);font-size:14px;border-top:1px solid var(--line);margin-top:36px}
+footer p{margin:0 0 8px;max-width:62ch}
+
+/* ---------- print ---------- */
+@media print{
+  nav,.chev,.gate button{display:none}
+  body{background:#fff}
+  .step-body,.gate .gate-body{display:block!important}
+  section{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="meta">
+      <span>Synthesis</span><span>Four research threads</span><span>August 2026</span>
+    </div>
+    <p class="kicker">Golf course automation</p>
+    <h1>Four reports, one problem</h1>
+    <p class="thesis">
+      Everything covered in this chat: daily drone survey, a course that changes every round,
+      and procedural hole generation. Each thread began as a hardware question and ended
+      somewhere else entirely. <b>All three converged on the same unsolved problem — nobody
+      knows how to score a golf hole.</b>
+    </p>
+  </div>
+</header>
+
+<nav>
+  <div class="wrap">
+    <a href="#arc">The arc</a>
+    <a href="#premise">Premises</a>
+    <a href="#survey">Drones</a>
+    <a href="#change">Changing</a>
+    <a href="#procgen">Procedural</a>
+    <a href="#fitness">The fitness function</a>
+    <a href="#next">What next</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="arc">
+  <h2>The arc</h2>
+  <p class="sec-sub">Read in order, the four reports tell one story: value kept sliding away from the physical layer and toward the decision layer.</p>
+  <ul class="plain">
+    <li><b>Mowing is solved above the greens, blocked below them.</b> RTK autonomy handles fairway and rough commercially today. Greens are blocked by economics and liability, not physics.</li>
+    <li><b>Sensing works; measuring does not.</b> A drone can tell you where the turf is stressed. It cannot tell you how tall the grass is, because its noise floor is larger than the grass.</li>
+    <li><b>Actuation is possible and unaffordable.</b> Moving ground costs three to four orders of magnitude more per acre than building it once. The affordable version of a changing course is information, not earth.</li>
+    <li><b>So the bottleneck is judgement.</b> Every thread ended needing a machine that can say <i>this configuration is better than that one</i> — and that machine does not exist.</li>
+  </ul>
+  <p class="note">Worth noticing: none of these were killed by a missing sensor or a missing actuator. They were killed by a missing objective function.</p>
+</section>
+
+<section id="premise">
+  <h2>Premises</h2>
+  <p class="sec-sub">The two earlier reports that everything in this chat was built on top of.</p>
+  <div class="entries">
+    <div class="entry">
+      <div><div class="n">Mowers</div><div class="k">prior report</div></div>
+      <div>
+        <p>RTK-GNSS at 1&ndash;3 cm is the dominant navigation approach for commercial autonomous fairway and rough mowers. Husqvarna CEORA/EPOS, Toro Turf Pro with GeoLink, FireFly, Belrobotics, Kress, FJDynamics.</p>
+        <p>The consistent failure mode is canopy: RTK degrades to a float solution under trees and near structures. The consumer segment is ahead of the commercial one in fusing RTK with visual SLAM and LiDAR to cover that gap.</p>
+      </div>
+    </div>
+    <div class="entry">
+      <div><div class="n">Greens</div><div class="k">prior report</div></div>
+      <div>
+        <p>Autonomous greens mowing is commercially unsolved. Precise Path's RG3, sold as the Cub Cadet RGX, was shelved in February 2020 and nothing replaced it.</p>
+        <p>The reason is not navigation. It is that greens combine 2.5&ndash;4 mm cut heights where a quarter-millimetre error is visible, the smallest labour prize on the property at roughly three acres out of a hundred and fifty, and a catastrophic asymmetric downside &mdash; one scalp or one hydraulic leak ruins a green for a season.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="survey">
+  <h2>Daily drone survey</h2>
+  <p class="sec-sub">The idea: a pre-dawn fleet builds a photogrammetric or Gaussian-splat model of the course, and a central analysis directs the day's work.</p>
+
+  <div class="duo">
+    <div class="box a">
+      <h3>What works</h3>
+      <p>Thermal drought and localised dry spot detection &mdash; the strongest validated signal, and it works in the dark.</p>
+      <p>Multispectral vigour mapping, disease scouting, wear and traffic patterns, coverage anomalies.</p>
+      <p>The four-to-six-thirty window closes for RGB and multispectral analytics at two to three centimetre ground sample distance.</p>
+    </div>
+    <div class="box b">
+      <h3>What fails</h3>
+      <p>Any claim about height of cut. Vertical noise from aerial survey is as large as or larger than the grass being measured.</p>
+      <p>Gaussian splatting as the geometry representation &mdash; it optimises for photorealism, and its geometry degrades badly at aerial scale.</p>
+      <p>Sub-centimetre reconstruction inside the window. Data volume and processing time both blow past it.</p>
+    </div>
+  </div>
+
+  <p class="sec-sub" style="margin-top:26px;margin-bottom:10px">The vertical accuracy reality check &mdash; the number that decides the whole concept.</p>
+  <div class="rows">
+    <div class="row head"><div class="t">Quantity</div><div class="b">Source</div><div class="c">Value</div><div class="d">Verdict</div></div>
+    <div class="row"><div class="t">Greens height of cut</div><div class="b">the target</div><div class="c">2.5&ndash;4 mm</div><div class="d">&mdash;</div></div>
+    <div class="row"><div class="t">Visible error on a green</div><div class="b">the tolerance</div><div class="c">0.25 mm</div><div class="d">&mdash;</div></div>
+    <div class="row"><div class="t">UAV photogrammetry, vertical</div><div class="b">SfM/MVS</div><div class="c">~50 mm</div><div class="d">200&times; too coarse</div></div>
+    <div class="row"><div class="t">Short sward canopy height</div><div class="b">Forsmoo 2018</div><div class="c">37&ndash;42 mm</div><div class="d">MAE</div></div>
+    <div class="row"><div class="t">UAV LiDAR grassland, best case</div><div class="b">2023 study</div><div class="c">38.5 mm</div><div class="d">RMSE</div></div>
+    <div class="row"><div class="t">Clipping yield from NDRE etc.</div><div class="b">Zhou &amp; Soldat</div><div class="c">R&sup2; 0.57</div><div class="d">useful, not sufficient</div></div>
+  </div>
+
+  <p class="note">The honest product is agronomic scouting, not mowing control. Two hundred times too coarse is not an engineering gap you close with a better camera &mdash; it is the wrong sensor for that measurement.</p>
+
+  <p class="sec-sub" style="margin-top:26px;margin-bottom:10px">Two constraints that arrived from outside the technology.</p>
+  <ul class="plain">
+    <li><b>The DJI door closed in December 2025.</b> The FCC added foreign-made UAS and critical components to the Covered List. Aircraft already owned stay legal to fly, but new procurement should assume an NDAA-compliant path. Narrow exemptions issued January 2026 run only through the start of 2027.</li>
+    <li><b>Part 108 is still an NPRM.</b> Comments closed October 2025, the final rule is targeted for mid-2026. Unattended dock operations still need waivers today. A private, access-controlled golf course is close to the ideal fact pattern for approval, which helps.</li>
+  </ul>
+</section>
+
+<section id="change">
+  <h2>A course that changes every round</h2>
+  <p class="sec-sub">Ordered by ambition, because the order is real &mdash; each rung costs more and delivers less than the one below it.</p>
+
+  <div class="steps" id="steps">
+    <div class="step">
+      <button class="step-btn"><span class="step-n">1</span><span class="step-t">Setup variation</span><span class="pill a">free today</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Hole locations, tee markers, firmness, green speed. Golf already does this daily and has for a century.</p>
+        <p>Connolly and Rendleman's PGA Tour work found round-to-round course difficulty spanning about eleven strokes &mdash; dominated by weather and setup, not architecture. The cheap levers move scoring more than the expensive ones do.</p>
+      </div>
+    </div>
+    <div class="step">
+      <button class="step-btn"><span class="step-n">2</span><span class="step-t">Software-defined mow lines</span><span class="pill a">buildable</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>The strongest idea in the thread. An RTK fleet already drives every square foot nightly to centimetre accuracy, and both Toro GeoLink and Husqvarna EPOS accept arbitrary redefinable boundary polygons and multiple cut-height zones. Redrawing the fairway edge is a software change.</p>
+        <p>The catch is agronomic, not mechanical. The one-third rule means a band cannot drop from rough to fairway height in one pass, and turf grown at a consistent height develops a matching growth habit. The honest cadence is weekly, not nightly.</p>
+      </div>
+    </div>
+    <div class="step">
+      <button class="step-btn"><span class="step-n">3</span><span class="step-t">Paint and a digital rules layer</span><span class="pill a">buildable</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>This is the rung that genuinely changes every round. GPS line-marking robots already paint sports fields to about a centimetre and can repaint hazard boundaries nightly at no agronomic cost.</p>
+        <p>Pair that with geofenced virtual penalty areas enforced by a scoring app or an instrumented ball. The course looks the same; the game is different. Puttshack already proves the model works commercially.</p>
+      </div>
+    </div>
+    <div class="step">
+      <button class="step-btn"><span class="step-n">4</span><span class="step-t">Moving hazards</span><span class="pill b">one feature only</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Coeur d'Alene's floating fourteenth green has done this since 1991 &mdash; roughly 2,200 tons on a cable and winch system, repositioned daily between about ninety and two hundred twenty yards.</p>
+        <p>It works because water solves the load-bearing and drainage problems that would sink the same idea on land. Variable-level ponds using inflatable weirs are the other viable version. Both are single signature features, not a system.</p>
+      </div>
+    </div>
+    <div class="step">
+      <button class="step-btn"><span class="step-n">5</span><span class="step-t">Ground that moves or lights up</span><span class="pill b">never closes</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Retractable stadium pitches are the real precedent and the real warning. Tottenham stores roughly ten thousand tonnes in three sliding trays; Sapporo floats an 8,300-tonne pitch on an air cushion; State Farm rolls nineteen million pounds on rails.</p>
+        <p>Every one is a bespoke installation for a surface smaller than two acres. LED glass flooring lands in the same cost band and has no outdoor story at all.</p>
+      </div>
+    </div>
+    <div class="step">
+      <button class="step-btn"><span class="step-n">6</span><span class="step-t">The adaptive layer</span><span class="pill c">research open</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Should the course adapt to the player? Game design has been here: Hunicke's Hamlet system and Valve's AI Director in Left 4 Dead both modulate difficulty from sensed player state.</p>
+        <p>The documented failure mode transfers directly. Players resent adaptation they can detect. A course that visibly softens when you play badly would insult exactly the golfer who cares. Adaptation must be subtle, disclosed as match balancing, or opt-in.</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="sec-sub" style="margin-top:26px;margin-bottom:10px">Normalised to dollars per acre, the gap is not close.</p>
+  <div class="rows">
+    <div class="row head"><div class="t">Approach</div><div class="b">Scale</div><div class="c">$ / acre</div><div class="d">Ratio</div></div>
+    <div class="row"><div class="t">Digital rules layer</div><div class="b">software</div><div class="c">~0</div><div class="d">&mdash;</div></div>
+    <div class="row"><div class="t">Conventional golf construction</div><div class="b">100&ndash;200 ac</div><div class="c">$60k&ndash;350k</div><div class="d">baseline</div></div>
+    <div class="row"><div class="t">LED glass floor</div><div class="b">indoor only</div><div class="c">~$22M</div><div class="d">~100&times;</div></div>
+    <div class="row"><div class="t">Retractable natural pitch</div><div class="b">&lt;2 ac</div><div class="c">$6M&ndash;128M</div><div class="d">20&ndash;1000&times;</div></div>
+  </div>
+
+  <p class="note">Ski resorts reshape terrain parks every night with GPS-guided groomers. It works because snow has no agronomy and melts the mistakes away. Golf can steal the control philosophy, not the mechanism.</p>
+</section>
+
+<section id="procgen">
+  <h2>Procedural generation</h2>
+  <p class="sec-sub">Infinigen, ProcFunc and Blender geometry nodes as the substrate for generating holes rather than surveying them.</p>
+
+  <ul class="plain">
+    <li><b>ProcFunc is real and it is the right tool.</b> A 2026 Princeton Vision &amp; Learning Lab release, the function-oriented Python successor to Infinigen's node transpiler. Same core authors. It converts Blender node graphs into parameterised Python, which is the escape hatch from GUI modelling into code.</li>
+    <li><b>Lift Infinigen's architecture, not its generators.</b> Its wilderness assets are irrelevant to a human-shaped landscape, and its erosion simulation actively fights you on a green. What transfers is the transpiler, the gin-config parameterisation, and above all the Indoors constraint DSL with its annealing solver.</li>
+    <li><b>Go code-first from day one.</b> Blend files are binary and do not diff. Keep transpiled Python as the source of truth in version control and regenerate the scene. This single decision determines whether the project stays maintainable.</li>
+    <li><b>The compute is a workstation problem, not a cluster problem.</b> Roughly twenty gigabytes of RAM per concurrent scene, an NVIDIA card for rendering, and no SLURM requirement. The published render figures are from 2019-era hardware and are a generous upper bound.</li>
+  </ul>
+
+  <p class="sec-sub" style="margin-top:26px;margin-bottom:10px">Nodes and edges &mdash; the question read three ways, all three worth answering.</p>
+  <div class="entries">
+    <div class="entry">
+      <div><div class="n">Graph</div><div class="k">the Blender node tree</div></div>
+      <div><p>Curve-driven. A hole centreline becomes a swept fairway ribbon with a variable width profile; proximity thresholds off that edge paint first cut and rough as a turf-class attribute; the green is a closed contour patch; bunkers are boolean or SDF cavities placed relative to landing zones. Everything funnels through one earthwork merge and one turf-class field.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">Pipeline</div><div class="k">the generator DAG</div></div>
+      <div><p>Terrain, routing, corridor, tee, fairway, green, bunkers, water, rough, trees, paths, turf, materials, lighting. The interesting part is the cycle: green contour drives drainage drives earthwork drives the terrain the green sits on. Break it by stratifying into passes and iterating to a fixed point.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">Routing</div><div class="k">the domain graph</div></div>
+      <div><p>Holes as nodes, green-to-next-tee as edges &mdash; a constrained Hamiltonian path over candidate sites. Constraints: returning nines, par distribution, yardage per tee set, no crossing play lines, safety corridors, wind variety, walkable transitions. There is essentially no published academic work on this, which is either an opportunity or a warning.</p></div>
+    </div>
+  </div>
+
+  <p class="note">Answer set programming is the natural fit here given how you already think. Express the course constraints as logic predicates, let a solver enumerate satisfying layouts. Smith and Mateas made that case for PCG generally over a decade ago.</p>
+</section>
+
+<section id="fitness">
+  <h2>The fitness function</h2>
+  <p class="sec-sub">Where all three threads terminate. Generating a hole is easy; knowing whether it is any good is the open problem.</p>
+
+  <ul class="plain">
+    <li><b>Strokes gained gives you the evaluator.</b> Broadie's framework is a cost-to-go function over distance and lie. Sample a shot from a skill-conditioned dispersion, resolve the landing lie from the generated geometry, apply a lie-conditioned penalty, iterate to hole out. Run it thousands of times and you have expected strokes and variance per skill level.</li>
+    <li><b>A good hole is two near-equal strategies with different variance.</b> Made computable: sweep the policy space, and score the hole on whether at least two lines have comparable expected value but materially different spread &mdash; with the optimum shifting as skill changes. That is the strategic school, formalised.</li>
+    <li><b>Playability becomes machine-checkable predicates.</b> Pinnable area under a slope threshold, no interior sinks via flow accumulation, blind shots via raycast, forced carries against the tee set's carry capability, inter-hole safety via dispersion-ellipse overlap.</li>
+    <li><b>Quality-diversity is the right search, not optimisation.</b> A Redan, a Cape and a drivable short four are all good holes. MAP-Elites illuminates that manifold instead of collapsing it, and gives you the eighteen-hole variety requirement for free.</li>
+    <li><b>Your ball-flight project is the missing input.</b> The evaluator is only as good as its dispersion model. Measured launch and landing distributions from real players are exactly what turns a plausible simulation into a calibrated one.</li>
+  </ul>
+
+  <div class="gloss" style="margin-top:26px">
+    <dl>
+      <dt>Strokes gained</dt>
+      <dd>Broadie's benchmark expected-strokes function. From 400 yards a tour pro averages about four strokes to hole out; from eight feet, about one and a half.</dd>
+      <dt>Behaviour space</dt>
+      <dd>The axes a quality-diversity search spreads across. Here: length, variance, elevation change, strategic branching.</dd>
+    </dl>
+    <dl>
+      <dt>MAP-Elites</dt>
+      <dd>Mouret and Clune, 2015. Keeps the best solution found in each cell of behaviour space, producing an archive of good and different designs.</dd>
+      <dt>Hole genotype</dt>
+      <dd>The minimum parameter set. Roughly fifteen numbers describe a useful hole &mdash; par, length, dogleg angle and break, fairway width and taper, green area, ratio and orientation, slope, bunker count and station, elevation change.</dd>
+    </dl>
+  </div>
+</section>
+
+<section id="next">
+  <h2>What next</h2>
+  <p class="sec-sub">The three threads do not compete for attention &mdash; they feed each other, in a specific order.</p>
+
+  <ul class="plain">
+    <li><b>Build the evaluator before the generator.</b> The fitness function is the project; geometry is plumbing. The failure mode is a beautiful generator with nothing to say about quality.</li>
+    <li><b>One parametric hole, code-first, in a fortnight.</b> Centreline, fairway ribbon, rough bands, green patch, one bunker &mdash; from a dozen exposed parameters, emitted as Python.</li>
+    <li><b>Seed from real data.</b> USGS 3DEP one-metre elevation for landform, OpenStreetMap golf tagging for a corpus of real hole polygons to learn width and placement priors from. Green micro-contour is the one layer public data will not give you.</li>
+    <li><b>The synthetic-data payoff is the hedge.</b> Even if the design ambition stalls, perfectly-labelled synthetic aerial imagery feeds the turf segmentation problem from the drone thread, and ground-level frames feed mower perception. That value stands alone.</li>
+    <li><b>The sleeper connection.</b> A daily-updated aerial map could serve as a localisation prior for mowers under canopy &mdash; attacking the single biggest weakness in the fleet. That may be more defensible than anything the survey was originally meant to do.</li>
+  </ul>
+
+  <div class="gate" id="gate" style="margin-top:26px">
+    <p class="lead">Before committing</p>
+    <h3>The experiments that would kill each idea</h3>
+    <p class="blurb">Each thread has one cheap test that resolves it early. Worth running before any of them absorbs real money or months.</p>
+    <button type="button" id="gateBtn" aria-expanded="false" aria-controls="gateBody">Show them</button>
+    <div class="gate-body" id="gateBody">
+      <ul class="plain">
+        <li><b>Drone survey.</b> Fly one fairway and one green on consecutive mornings with permanent targets. Impose a known change &mdash; a strip mown three millimetres lower. If it does not clear the detection threshold, the mowing-control framing dies and only the scouting product survives. Separately, time the pipeline end to end against the six-thirty deadline.</li>
+        <li><b>Changing course.</b> Repaint target and hazard polygons on a putting green each session, with a rules layer that moves the scoring zones. Do players come back specifically for the variability, or just because they like short golf? If the variability is not the draw, the premise is wrong and no amount of hardware fixes it.</li>
+        <li><b>Procedural generation.</b> Take five to ten celebrated real holes, fit them to your parameter set, and run your fitness function on them. If it cannot express them, the representation is too thin. If it ranks them below bland municipal holes, the objective is wrong. Either way, stop and fix that before building more generator.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>Synthesis of four research reports produced in this conversation, plus two earlier reports on robotic mowers and autonomous greens mowing that framed them.</p>
+  <p>Figures throughout are drawn from the underlying reports. Vendor specifications, peer-reviewed results and derived estimates are distinguished there; where a number here is an order-of-magnitude normalisation rather than an audited figure, the source report says so.</p>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* expandable steps */
+  document.querySelectorAll('#steps .step').forEach(function(step){
+    var btn = step.querySelector('.step-btn');
+    var chev = step.querySelector('.chev');
+    btn.setAttribute('aria-expanded','false');
+    btn.addEventListener('click', function(){
+      var open = step.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(chev) chev.textContent = open ? '\u2013' : '+';
+    });
+  });
+
+  /* disclosure */
+  var gate = document.getElementById('gate');
+  if(gate){
+    var gbtn = document.getElementById('gateBtn');
+    gbtn.addEventListener('click', function(){
+      var open = gate.classList.toggle('open');
+      gbtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      gbtn.textContent = open ? 'Hide them again' : 'Show them';
+    });
+  }
+
+  /* nav scroll-spy — reads the nav, no config needed */
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav a'));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function spy(){
+    var y = window.scrollY + 110, idx = 0;
+    sections.forEach(function(s,i){ if(s && s.offsetTop <= y) idx = i; });
+    links.forEach(function(a,i){ a.classList.toggle('on', i === idx); });
+  }
+  window.addEventListener('scroll', spy, {passive:true});
+  spy();
+})();
+</script>
+</body>
+</html>
