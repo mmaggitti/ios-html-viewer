@@ -637,9 +637,11 @@
         <article id="storeSection">
             <h4>File Store <small>(public)</small></h4>
             <p class="hint"><small>Uploaded files are committed to the public GitHub repo and served at
-                    permanent URLs. Open a hosted file and use <strong>Share → Add to Home Screen</strong>
-                    for a bulletproof shortcut — it's a plain path URL, nothing for iOS to strip.
-                    Anyone with the link can view these files.</small></p>
+                    permanent URLs. <strong>View</strong> renders a file instantly (straight from the
+                    repo, no publish wait). <strong>Open</strong> goes to its permanent URL once
+                    "live" — pin from there with <strong>Share → Add to Home Screen</strong>: it's a
+                    plain path URL, nothing for iOS to strip. Anyone with the link can view these
+                    files.</small></p>
             <ul id="hostedList" class="saved-list"></ul>
             <p id="hostedEmpty" class="hint"><small>No hosted files yet.</small></p>
             <div id="tokenSetup">
@@ -936,7 +938,7 @@
                     }
                     watchPublish(file.name);
                     refreshHostedList();
-                    showAlert('Uploaded "' + file.name + '" — committed to the repo. It goes live at its public URL within about a minute; its row below will read "live". Open it there, then Share → Add to Home Screen for a shortcut that cannot break.');
+                    showAlert('Uploaded "' + file.name + '" — committed to the repo. View shows it right away; the permanent URL for pinning goes live within about a minute (its row will read "live").');
                 } catch (e) {
                     showAlert('Upload failed: ' + (e && e.message || e));
                 }
@@ -978,8 +980,29 @@
                     var actions = document.createElement('div');
                     actions.className = 'file-actions';
 
+                    /* View: raw content straight from the Contents API —
+                       available the moment the upload commits, no Pages
+                       rebuild wait. Renders in-app (not the pinnable URL). */
+                    var viewBtn = document.createElement('button');
+                    viewBtn.textContent = 'View';
+                    viewBtn.addEventListener('click', async function () {
+                        try {
+                            var r = await ghFetch('/contents/' + encodePath(STORE_DIR + '/' + f.name) +
+                                '?ref=' + PAGES_BRANCH,
+                                { headers: { 'Accept': 'application/vnd.github.raw+json' } });
+                            if (!r.ok) throw new Error('GitHub API ' + r.status);
+                            var content = await r.text();
+                            renderDocument(prepareRenderable(content, f.name), f.name);
+                        } catch (e) {
+                            showAlert('Could not load "' + f.name + '": ' + (e && e.message || e));
+                        }
+                    });
+
+                    /* Open: the permanent Pages URL — the one to pin. Live
+                       only after the rebuild (the row's status says which). */
                     var openBtn = document.createElement('button');
                     openBtn.textContent = 'Open';
+                    openBtn.className = 'ghost';
                     openBtn.addEventListener('click', function () {
                         location.assign(storeViewUrl(f.name));
                     });
@@ -999,6 +1022,7 @@
                         } catch (e) { showAlert('Delete failed: ' + (e && e.message || e)); }
                     });
 
+                    actions.appendChild(viewBtn);
                     actions.appendChild(openBtn);
                     actions.appendChild(delBtn);
                     li.appendChild(meta);
