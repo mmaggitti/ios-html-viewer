@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Sasha Shulgin — a research summary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Karla:wght@400;500;600&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   PAPER — warm document style
+   Accent meanings for THIS document:
+     rose → the cost: harm, criticism, the case against
+     sage → the contribution: what he demonstrably added
+     sky  → the record: context, corrections, gated material
+     sand → emphasis, list bullets, active nav
+   ============================================================ */
+
+:root{
+  color-scheme: light only;
+
+  --paper:#F6F1E7;      /* canvas                        */
+  --raised:#FCFAF5;     /* panels — lighter than canvas  */
+
+  --ink:#3E3A33;        /* body            10.0:1        */
+  --ink-mid:#6B665C;    /* secondary        5.1:1        */
+  --ink-soft:#736D5F;   /* labels           4.6:1        */
+  --ink-faint:#9A9488;  /* non-text only    2.7:1        */
+
+  --line:#E3DBCB;       /* structural hairline           */
+  --line-soft:#EDE6D8;  /* within-group hairline         */
+
+  --rose:#C99A93;
+  --sage:#9DB39A;
+  --sky:#A3B8C9;
+  --sand:#DCC49A;
+
+  --rose-wash:#F2E2DF;
+  --sage-wash:#E6EDE4;
+  --sky-wash:#E5EBF0;
+  --sand-wash:#F1EADC;
+
+  --hand:"Caveat","Bradley Hand","Segoe Script",cursive;
+  --print:"Patrick Hand","Comic Sans MS",cursive;
+  --body:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;
+
+  --maxw:760px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--paper)}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--body);font-size:16.5px;line-height:1.62;
+  -webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;
+}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--sky);outline-offset:3px;border-radius:3px}
+
+/* ---------- masthead ---------- */
+header.top{padding:34px 0 30px}
+.meta{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);display:flex;flex-wrap:wrap;gap:2px 14px;margin-bottom:16px}
+.meta span::after{content:" ·";color:var(--line)}
+.meta span:last-child::after{content:""}
+.kicker{font-family:var(--print);font-size:16px;color:var(--ink-mid);margin:0 0 2px}
+h1{font-family:var(--hand);font-weight:700;font-size:clamp(46px,11vw,74px);line-height:.94;margin:0}
+.thesis{max-width:54ch;margin:20px 0 0;font-size:16.5px;color:var(--ink-mid)}
+.thesis b{color:var(--ink);font-weight:600}
+
+/* ---------- sticky nav ---------- */
+nav{position:sticky;top:0;z-index:40;background:rgba(246,241,231,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;overflow-x:auto;scrollbar-width:none;padding-top:0;padding-bottom:0}
+nav .wrap::-webkit-scrollbar{display:none}
+nav a{font-family:var(--print);font-size:15px;color:var(--ink-soft);text-decoration:none;padding:11px 13px;white-space:nowrap;border-bottom:2px solid transparent}
+nav a:hover{color:var(--ink-mid)}
+nav a.on{color:var(--ink);border-bottom-color:var(--sand)}
+
+/* ---------- sections ---------- */
+section{padding:44px 0 4px}
+section + section{border-top:1px solid var(--line-soft)}
+h2{font-family:var(--hand);font-weight:700;font-size:clamp(32px,7vw,44px);line-height:1;margin:0}
+.sec-sub{color:var(--ink-mid);font-size:15.5px;margin:10px 0 26px;max-width:58ch}
+
+/* ---------- 1 · plain list ---------- */
+ul.plain{list-style:none;padding:0;margin:0;border-top:1px solid var(--line)}
+ul.plain li{padding:12px 0 12px 20px;border-bottom:1px solid var(--line-soft);font-size:15.5px;position:relative;color:var(--ink-mid)}
+ul.plain li::before{content:"";position:absolute;left:1px;top:1.35em;width:8px;height:2px;border-radius:2px;background:var(--sand)}
+ul.plain li b{color:var(--ink);font-weight:600}
+
+/* ---------- 2 · entry rows ---------- */
+.entries{border-top:1px solid var(--line)}
+.entry{display:grid;grid-template-columns:158px 1fr;gap:18px;padding:14px 2px;border-bottom:1px solid var(--line-soft);align-items:start}
+.entry:last-child{border-bottom:0}
+.entry .n{font-family:var(--hand);font-weight:700;font-size:24px;line-height:1.05;color:var(--ink)}
+.entry .k{font-family:var(--print);font-size:13px;color:var(--ink-soft);margin-top:2px}
+.entry p{margin:0;font-size:15.5px;color:var(--ink-mid)}
+.entry p + p{margin-top:5px}
+@media(max-width:560px){.entry{grid-template-columns:1fr;gap:4px}.entry .k{margin-bottom:4px}}
+
+/* ---------- 3 · duo boxes ---------- */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:620px){.duo{grid-template-columns:1fr}}
+.box{background:var(--raised);border:1px solid var(--line);border-radius:6px;padding:18px 18px 20px;border-top:3px solid var(--line)}
+.box.a{border-top-color:var(--sage)}
+.box.b{border-top-color:var(--rose)}
+.box h3{font-family:var(--hand);font-weight:700;font-size:28px;line-height:1;margin:0 0 10px}
+.box p{margin:0 0 8px;font-size:15px;color:var(--ink-mid)}
+.box p:last-child{margin-bottom:0}
+
+/* ---------- 4 · margin note ---------- */
+.note{font-family:var(--print);font-size:15.5px;color:var(--ink-mid);border-left:2px solid var(--sand);padding-left:12px;margin:20px 0 0;line-height:1.5}
+
+/* ---------- 5 · numbered steps ---------- */
+.steps{border-top:1px solid var(--line)}
+.step{border-bottom:1px solid var(--line)}
+.step-btn{width:100%;background:none;border:0;color:inherit;font:inherit;display:grid;grid-template-columns:30px 1fr auto;gap:12px;align-items:center;padding:14px 6px;text-align:left;cursor:pointer;border-radius:4px}
+.step-btn:hover{background:var(--raised)}
+.step-n{font-family:var(--hand);font-weight:700;font-size:22px;color:var(--ink-soft);line-height:1}
+.step-t{font-size:16px;font-weight:500}
+.pill{font-family:var(--print);font-size:13px;color:var(--ink-mid);padding:1px 9px;border-radius:999px;white-space:nowrap}
+.pill.a{background:var(--sage-wash)}
+.pill.b{background:var(--rose-wash)}
+.pill.c{background:var(--sky-wash)}
+.step-body{display:none;padding:0 6px 18px 42px;color:var(--ink-mid);font-size:15.5px}
+.step.open .step-body{display:block}
+.step-body p{margin:0 0 9px}
+.chev{font-family:var(--print);font-size:17px;color:var(--ink-soft)}
+@media(max-width:520px){
+  .step-btn{grid-template-columns:24px 1fr;gap:10px}
+  .step-btn .pill{grid-column:2;justify-self:start;margin-top:2px}
+  .chev{display:none}
+  .step-body{padding-left:34px}
+}
+
+/* ---------- 6 · data rows ---------- */
+.rows{border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:1fr 82px 74px 66px;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line-soft);align-items:baseline}
+.row.head{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);border-bottom-color:var(--line)}
+.row .t{font-size:15.5px}
+.row .b,.row .c,.row .d{font-family:var(--print);font-size:14.5px;color:var(--ink-mid)}
+.row .d{color:var(--ink-soft)}
+@media(max-width:600px){
+  .row{grid-template-columns:1fr auto;gap:2px 12px}
+  .row .c{grid-column:2;text-align:right}
+  .row .b{grid-column:1;font-size:13.5px;color:var(--ink-soft)}
+  .row .d{grid-column:2;text-align:right;font-size:13.5px}
+  .row.head{display:none}
+}
+
+/* ---------- 7 · disclosure ---------- */
+.gate{background:var(--raised);border:1px solid var(--line);border-left:3px solid var(--sky);border-radius:6px;padding:18px 20px 20px}
+.gate .lead{font-family:var(--print);font-size:14.5px;color:var(--ink-soft);margin:0 0 4px}
+.gate h3{font-family:var(--hand);font-weight:700;font-size:28px;line-height:1;margin:0 0 8px}
+.gate .blurb{margin:0 0 14px;font-size:15px;color:var(--ink-mid)}
+.gate button{font-family:var(--print);font-size:15px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:6px 16px;cursor:pointer}
+.gate button:hover{background:var(--sand-wash)}
+.gate .gate-body{display:none;margin-top:16px;border-top:1px solid var(--line-soft);padding-top:4px}
+.gate.open .gate-body{display:block}
+
+/* ---------- 8 · definition pairs ---------- */
+.gloss{display:grid;grid-template-columns:1fr 1fr;gap:0 26px}
+@media(max-width:620px){.gloss{grid-template-columns:1fr}}
+.gloss dl{margin:0}
+.gloss dt{font-family:var(--hand);font-weight:700;font-size:21px;margin-top:14px;color:var(--ink)}
+.gloss dd{margin:0;font-size:15px;color:var(--ink-mid)}
+
+/* ---------- footer ---------- */
+footer{padding:38px 0 60px;color:var(--ink-soft);font-size:14px;border-top:1px solid var(--line);margin-top:36px}
+footer p{margin:0 0 8px;max-width:62ch}
+
+/* ---------- print ---------- */
+@media print{
+  nav,.chev,.gate button{display:none}
+  body{background:#fff}
+  .step-body,.gate .gate-body{display:block!important}
+  section{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="meta">
+      <span>Biography</span><span>1925–2014</span><span>Chemistry &amp; pharmacology</span><span>Research summary</span>
+    </div>
+    <p class="kicker">Alexander Theodore Shulgin</p>
+    <h1>Sasha Shulgin</h1>
+    <p class="thesis">
+      An industrial pesticide chemist who spent fifty years synthesising psychoactive compounds in a
+      shed behind his house and testing them on himself. The psychedelic-therapy revival claims him
+      and the research-chemicals market can be traced to him, and both are fair.
+      <b>He did not invent MDMA. He worked out what it did and told psychotherapists about it.</b>
+    </p>
+  </div>
+</header>
+
+<nav>
+  <div class="wrap">
+    <a href="#brief">In brief</a>
+    <a href="#life">Life</a>
+    <a href="#farm">The Farm</a>
+    <a href="#work">The work</a>
+    <a href="#mdma">MDMA</a>
+    <a href="#books">Books</a>
+    <a href="#ann">Ann</a>
+    <a href="#legacy">Legacy</a>
+    <a href="#record">Record</a>
+    <a href="#caveats">Caveats</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="brief">
+  <h2>In brief</h2>
+  <p class="sec-sub">Four things worth carrying away, if you read nothing else.</p>
+  <ul class="plain">
+    <li><b>He made his own freedom first.</b> The carbamate insecticide Zectran, invented at Dow and marketed in 1961, was profitable enough that the company told him to work on whatever he liked. He worked on psychedelics.</li>
+    <li><b>Roughly two hundred compounds, most of them tested on himself.</b> The 2C family and the DOx family are his; so is the first published account of what MDMA does in a human being.</li>
+    <li><b>The books are the whole controversy in one object.</b> <i>PiHKAL</i> and <i>TiHKAL</i> are half memoir, half laboratory record, with synthesis and dosage printed in full. The DEA read them as manuals. So, later, did a global market in novel psychoactive substances.</li>
+    <li><b>His reputation is being actively rewritten.</b> MDMA-assisted therapy reached formal regulatory review, his archive is being digitised, and historians have both credited him and punctured his self-mythology.</li>
+  </ul>
+</section>
+
+<section id="life">
+  <h2>Life before the Farm</h2>
+  <p class="sec-sub">Berkeley, Harvard at sixteen, the North Atlantic, and eleven years of pesticide chemistry.</p>
+  <ul class="plain">
+    <li><b>Born 17 June 1925 in Berkeley.</b> His father, Theodore Stevens Shulgin, was a Russian émigré from Chelyabinsk who taught history and literature; his mother, Henrietta Aten, was an Illinois-born poet. Both taught in Alameda County public schools.</li>
+    <li><b>Music and a chemistry set.</b> He played piano, violin and viola throughout his life. A Gilbert Chemical Laboratory Outfit became his first laboratory, in his parents' basement.</li>
+    <li><b>Harvard at sixteen, on scholarship.</b> He read organic chemistry from about 1942, felt out of place among the children of wealth and position, and left in his second year, in 1943.</li>
+    <li><b>The Navy, 1943–46.</b> He served in the North Atlantic aboard the USS Pope.</li>
+    <li><b>Berkeley, then UCSF.</b> A B.S. in chemistry and a PhD in biochemistry completed in 1954 — the degree is often dated 1955 — under David M. Greenberg, with a thesis on the synthesis of isotopically labelled amino acids, followed by postdoctoral work in psychiatry and pharmacology at UC San Francisco.</li>
+    <li><b>Dow Chemical, roughly 1955 to 1966.</b> He joined as a senior research chemist on pesticides and fertilisers, after a short spell as research director at Bio-Rad Laboratories.</li>
+    <li><b>Zectran.</b> His carbamate insecticide mexacarbate, marketed by Dow in 1961 and described as the first biodegradable pesticide, was highly profitable. Of the latitude the patent bought him he told <i>The Independent</i> in 2002 that Dow said <i>"Do as you wish. So I did. I did psychedelics."</i></li>
+    <li><b>2 April 1960: mescaline.</b> His first psychedelic experience was decisive. He described understanding that <i>"our entire universe is contained in the mind and the spirit"</i> — and that chemicals could open access to it. He said afterwards that it settled the direction of his whole life.</li>
+    <li><b>The exit, late 1966.</b> As the psychedelic papers multiplied, Dow asked him to stop attaching the company's name to them, and he left. Months later DOM, a compound of his, surfaced in Haight-Ashbury as "STP" and was traced back to him.</li>
+  </ul>
+  <p class="note">The origin story he told most often was about a placebo. Before surgery on an infected thumb in the Navy, a nurse gave him orange juice; he took the undissolved sugar at the bottom of the glass for a sedative and passed out. Working out what had actually happened left him permanently interested in the machinery of mental process rather than in chemistry as such.</p>
+</section>
+
+<section id="farm">
+  <h2>The Farm and the DEA</h2>
+  <p class="sec-sub">A shed behind the house, a Schedule I licence, and a working relationship with the agency that eventually took it away.</p>
+  <ul class="plain">
+    <li><b>The Farm.</b> A small outbuilding behind his house on family land near Lafayette, California. He spent about two years studying neurology at the UCSF School of Medicine before going full-time as a private consultant.</li>
+    <li><b>A Schedule I analytical licence.</b> It let him legally synthesise and hold otherwise-illicit compounds. Everything that followed rested on it.</li>
+    <li><b>Teaching paid for the rest.</b> Public health, forensic toxicology, chemistry and the pharmacology of psychoactive drugs at UC Berkeley, UCSF, San Francisco State and San Francisco General; briefly a pharmaceutical chemistry post at San Jose State in 1971. Ann later transcribed his SFSU lectures, published after his death as <i>The Nature of Drugs</i>.</li>
+  </ul>
+
+  <div class="duo" style="margin-top:22px">
+    <div class="box a">
+      <h3>Deputised</h3>
+      <p>Through Bob Sager, head of the DEA's Western Laboratories, he ran pharmacology seminars for agents, supplied reference samples and appeared as an expert witness in drug trials.</p>
+      <p>He collected DEA commendations, including one in 1973 for personal efforts against drug abuse, and in 1988 wrote <i>Controlled Substances</i>, then the standard chemical-and-legal reference for federal drug law. A DEA official married him and Ann in 1981.</p>
+    </div>
+    <div class="box b">
+      <h3>Raided</h3>
+      <p>On 27 October 1994, around thirty federal, state and local agents arrived unannounced with warrants — eight vehicles, including a fire engine and marked police cars — a month after a routine inspection.</p>
+      <p>Framed as an administrative investigation of regulatory compliance rather than a criminal one, it produced record-keeping and storage infractions. He surrendered the licence rather than fight a costly and unwinnable case, and was fined $25,000 by the local district attorney.</p>
+    </div>
+  </div>
+
+  <ul class="plain" style="margin-top:22px">
+    <li><b>The fine was for other people's mail.</b> Strangers posted him anonymous samples hoping he would test them. An unpublished DEA administrative rule barred holding them, at up to $25,000 per sample.</li>
+    <li><b>His community paid it.</b> The fine plus roughly $15,000 in legal and related costs came out of the couple's retirement savings; supporters set up a trust and raised at least $28,000.</li>
+    <li><b>Two earlier inspections of the same laboratory had found nothing.</b> Both predated <i>PiHKAL</i>, which the DEA read as a synthesis manual — the main reason most accounts treat the raid as a response to the book rather than to the shed.</li>
+  </ul>
+</section>
+
+<section id="work">
+  <h2>The work</h2>
+  <p class="sec-sub">Roughly two hundred compounds, a five-point scale for describing them, and a method most of his field would not touch.</p>
+
+  <div class="entries">
+    <div class="entry">
+      <div><div class="n">2C</div><div class="k">phenethylamines</div></div>
+      <div><p>His own name for the family, after the two carbons between the benzene ring and the amino group. 2C-B (1974) is the best known; 2C-E, 2C-I, 2C-T-2 and 2C-T-7 followed.</p><p>Asked in his last interview to name a single favourite compound, he said 2C-B without hesitating.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">DOx</div><div class="k">phenethylamines</div></div>
+      <div><p>Begun with DOM, first synthesised in 1963. In mid-1967 it reached Haight-Ashbury as "STP", given away free by the underground chemist Owsley Stanley at strengths far above anything Shulgin had used, and produced a wave of bad reactions and hospitalisations.</p><p>The first case of a Shulgin compound escaping into uncontrolled use, and a template for what happened later. A peer-reviewed account published in 2024 revisited the episode and his part in it.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">Tryptamines</div><div class="k">the second book</div></div>
+      <div><p>Seminal work on the tryptamine series, gathered in <i>TiHKAL</i> in 1997. The published derivatives seeded a second wave of novel substances in the same way the phenethylamines had.</p></div>
+    </div>
+  </div>
+
+  <ul class="plain" style="margin-top:26px">
+    <li><b>The Shulgin Rating Scale.</b> A qualitative ladder — minus, plus-or-minus, plus, plus-plus, plus-plus-plus — for reporting subjective intensity, published with Ann Shulgin and Peyton Jacob III in 1986 in <i>Methods and Findings in Experimental and Clinical Pharmacology</i> and popularised by <i>PiHKAL</i>.</li>
+    <li><b>A separate mark for something else entirely.</b> Four pluses denotes a rare transcendental peak experience rather than a stronger effect. Across an estimated four thousand sessions over fifty years, he claimed two or three.</li>
+    <li><b>The magical half-dozen.</b> Mescaline, DOM, 2C-B, 2C-E, 2C-T-2 and 2C-T-7 — the compounds he returned to.</li>
+    <li><b>The method.</b> A new compound went to him first, beginning far below anything he expected to be active and escalating slowly, then to a small circle of trusted friends including Ann and Myron and Jean Stolaroff. Everyone wrote up what happened. Those write-ups were the data.</li>
+  </ul>
+
+  <div class="duo" style="margin-top:22px">
+    <div class="box a">
+      <h3>The defence</h3>
+      <p>Self-experimentation is an old and respectable scientific tradition — Purkyně and others — and the neuroscientist Matthew Baggott and others have argued that Shulgin was stigmatised chiefly for being open about doing what others did quietly.</p>
+      <p>Nobody else was going to characterise these compounds. Without him, most would simply be unknown.</p>
+    </div>
+    <div class="box b">
+      <h3>The charge</h3>
+      <p><i>Chemistry World</i> called the practice <i>"rather troubling"</i>: doses reasoned from structural resemblance to a known analogue, with no pharmacokinetic data from animal models behind them.</p>
+      <p>Drake Bennett, profiling him in the <i>New York Times Magazine</i> in 2005, reported that most of the scientific community regarded him as <i>"at best a curiosity and at worst a menace."</i></p>
+    </div>
+  </div>
+</section>
+
+<section id="mdma">
+  <h2>MDMA</h2>
+  <p class="sec-sub">The claim made about him most often is the one most often got wrong. The order of events settles it.</p>
+  <div class="steps" id="steps">
+    <div class="step">
+      <button class="step-btn"><span class="step-n">1</span><span class="step-t">1912 — Merck files it away</span><span class="pill c">Context</span><span class="chev">+</span></button>
+      <div class="step-body"><p>MDMA was first synthesised at Merck as a synthetic intermediate. Its effects were left essentially unexplored for the next half-century.</p></div>
+    </div>
+    <div class="step">
+      <button class="step-btn"><span class="step-n">2</span><span class="step-t">1965 — Shulgin makes it and shelves it</span><span class="pill c">Context</span><span class="chev">+</span></button>
+      <div class="step-body"><p>He synthesised it himself but did not test it. It sat untouched for eleven years.</p></div>
+    </div>
+    <div class="step">
+      <button class="step-btn"><span class="step-n">3</span><span class="step-t">1976 — the bioassay</span><span class="pill a">Contribution</span><span class="chev">+</span></button>
+      <div class="step-body"><p>A student in the medicinal-chemistry group he advised at San Francisco State mentioned a "special effect". He resynthesised the compound and took it himself in September 1976; his laboratory notebook confirms the date.</p></div>
+    </div>
+    <div class="step">
+      <button class="step-btn"><span class="step-n">4</span><span class="step-t">1977 — he hands it to Leo Zeff</span><span class="pill a">Contribution</span><span class="chev">+</span></button>
+      <div class="step-body"><p>The Oakland psychologist came out of retirement for it and called it "Adam", believing it returned people to a state of primordial innocence.</p><p>Over the next twelve years, until MDMA was prohibited in 1985, Zeff treated more than four thousand patients with it and trained roughly a hundred and fifty therapists — the figure cited by both the UC Berkeley Center for the Science of Psychedelics and the <i>American Journal of Psychiatry</i>.</p></div>
+    </div>
+    <div class="step">
+      <button class="step-btn"><span class="step-n">5</span><span class="step-t">1978 — the paper, with David Nichols</span><span class="pill a">Contribution</span><span class="chev">+</span></button>
+      <div class="step-body"><p>The first published account of MDMA's pharmacological action in humans. This, not the synthesis, is the contribution that stands.</p></div>
+    </div>
+    <div class="step">
+      <button class="step-btn"><span class="step-n">6</span><span class="step-t">1985 — prohibition</span><span class="pill b">Cost</span><span class="chev">+</span></button>
+      <div class="step-body"><p>MDMA was scheduled. Rick Doblin recalls Shulgin being badly depressed by it: his view was that these compounds opened people not to drug experiences but, in his phrasing, <i>"to human experiences of ourselves."</i></p></div>
+    </div>
+    <div class="step">
+      <button class="step-btn"><span class="step-n">7</span><span class="step-t">2010 — the correction</span><span class="pill c">Record</span><span class="chev">+</span></button>
+      <div class="step-body"><p>Benzenhöfer and Passie, writing in <i>Addiction</i>, put it plainly: <i>"Shulgin was not the first to synthesize MDMA"</i>. He played an important part in its history, which is why he is sometimes wrongly called its father.</p></div>
+    </div>
+  </div>
+  <p class="note">If you only ever say one thing about Shulgin and MDMA, say reintroduced — not invented, and not father of.</p>
+</section>
+
+<section id="books">
+  <h2>The books</h2>
+  <p class="sec-sub">Two volumes, each half novel and half laboratory record, published by the Shulgins themselves because nobody else would touch them.</p>
+
+  <div class="entries">
+    <div class="entry">
+      <div><div class="n">PiHKAL</div><div class="k">1991 · phenethylamines</div></div>
+      <div><p>"Phenethylamines I Have Known and Loved." Part one is a fictionalised autobiography of Shura and Alice, thinly veiled versions of the Shulgins, love triangle included; the main fiction, as he put it, is that it is fiction.</p><p>Part two is technical: 179 compounds with synthesis, suggested dosage, duration and detailed commentary on effects.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">TiHKAL</div><div class="k">1997 · tryptamines</div></div>
+      <div><p>"Tryptamines I Have Known and Loved", in the same two-part shape: 55 tryptamine entries plus appendices on cactus alkaloids, natural beta-carbolines and drug law.</p><p>The technical half was made freely available on Erowid; the memoir stayed in print only.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">Controlled Substances</div><div class="k">1988 · reference</div></div>
+      <div><p>A chemical and legal guide to federal drug law, and for a time the standard desk reference for narcotics officers.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">The Simple Plant Isoquinolines</div><div class="k">2002 · with Wendy Perry</div></div>
+      <div><p>624 pages, cross-indexed, on plant isoquinoline alkaloids including the cactus mescaline analogues. Written with his stepdaughter.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">The Shulgin Index</div><div class="k">2011 · with Manning and Daley</div></div>
+      <div><p>Volume one, roughly a thousand pages on psychedelic phenethylamines and related compounds. A reference work rather than a memoir.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">The Nature of Drugs</div><div class="k">posthumous · lectures</div></div>
+      <div><p>His San Francisco State lectures, transcribed by Ann and published by Transform Press. He also contributed a chapter, "A New Vocabulary", to <i>Entheogens and the Future of Religion</i> in 1997.</p></div>
+    </div>
+  </div>
+
+  <ul class="plain" style="margin-top:26px">
+    <li><b>Why they self-published.</b> Journals had grown wary of his work on legal grounds and publishers thought <i>PiHKAL</i> too dangerous, so the Shulgins founded Transform Press in 1991 to put it out themselves.</li>
+    <li><b>Why he published at all.</b> He cited Wilhelm Reich, dead in prison in 1957, as the cautionary case: better to put the knowledge in the open than let it be confiscated.</li>
+  </ul>
+
+  <div class="duo" style="margin-top:22px">
+    <div class="box a">
+      <h3>The foreword</h3>
+      <p>David Nichols wrote that there was no other book like it — and that new legislation meant there might never be another.</p>
+      <p>Both volumes became foundational texts, read as readily in academic laboratories as in the underground.</p>
+    </div>
+    <div class="box b">
+      <h3>The verdict</h3>
+      <p>Richard Meyer, spokesman for the DEA's San Francisco field division, said the books were <i>"pretty much cookbooks on how to make illegal drugs"</i>.</p>
+      <p>He added that agents kept finding copies in the clandestine laboratories they raided.</p>
+    </div>
+  </div>
+</section>
+
+<section id="ann">
+  <h2>Ann, and the Tribe</h2>
+  <p class="sec-sub">The work was not done alone, and the second author was not a footnote.</p>
+  <ul class="plain">
+    <li><b>His first wife, Nina Gordon, died in 1977.</b> Their son Theodore died in 2011.</li>
+    <li><b>Ann.</b> Born Laura Ann Gotlieb in Wellington in 1931, to an American consul, Bernard Gotlieb, and a New Zealander mother; raised in Italy, Cuba, Canada and the United States. She worked as an artist and a medical transcriber, and later as a lay therapist facilitating MDMA and 2C-B sessions while both were still legal.</li>
+    <li><b>They met in 1978 and married on 4 July 1981,</b> in the back garden at the Farm. It was her fourth marriage; she had four children.</li>
+    <li><b>The division of labour was explicit.</b> In her words: <i>"He has the scientific viewpoint, and I have the psychological and the spiritual."</i> She co-wrote both books and co-founded Transform Press.</li>
+    <li><b>The Tribe.</b> A standing group of therapists, scientists and friends who sat for sessions and wrote them up, some of them for decades.</li>
+    <li><b>The end.</b> He died of liver cancer at the Farm on 2 June 2014, aged 88, with family, carers and Buddhist meditation music in the room. Ann died in the same house on 9 July 2022, aged 91, after a long decline with chronic obstructive pulmonary disease. Parts of the property had been sold to cover his late medical costs, the rest made up by donations from their community.</li>
+  </ul>
+</section>
+
+<section id="legacy">
+  <h2>Legacy</h2>
+  <p class="sec-sub">Both of these are true simultaneously, and an honest account has to hold them together rather than pick one.</p>
+
+  <div class="duo">
+    <div class="box a">
+      <h3>What he opened</h3>
+      <p>MDMA-assisted therapy for PTSD was built on the ground he and Nichols cleared. Rick Doblin petitioned the DEA over MDMA's scheduling in 1984 and founded MAPS; the work later earned FDA breakthrough therapy designation and reached phase 3 trials, with MAPS reporting around 1,700 subjects dosed and a single serious adverse reaction.</p>
+      <p>Timothy Leary told the <i>Los Angeles Times</i> in 1995 that he considered the Shulgins <i>"two of the most important scientists of the 20th Century"</i>.</p>
+    </div>
+    <div class="box b">
+      <h3>What he loosed</h3>
+      <p>Historians date the "phenethylamine period" of illicit derivatives — roughly fifty of them turning up in European and American seizures — to <i>PiHKAL</i>'s publication, with tryptamine derivatives following <i>TiHKAL</i>. Later and far more potent derivatives, notably the NBOMe class active at microgram scale, were linked to deaths.</p>
+      <p>Compounds he first described, particularly 2C-T-7 and 2C-I, were implicated in overdose deaths. He expressed sadness but argued that every drug, aspirin included, is dangerous used wrongly. Mark Peplow, in <i>Chemistry World</i>, judged those later disclaimers naïve at best.</p>
+    </div>
+  </div>
+
+  <ul class="plain" style="margin-top:26px">
+    <li><b>The chemistry establishment's verdict is mixed and unembarrassed about it.</b> Obituaries in <i>C&amp;EN</i> and <i>Chemistry World</i> credit a highly skilled synthetic chemist and a pioneer of structure–activity work on 5-HT2A-active phenethylamines, while being blunt about the method. Nichols's continuing medicinal chemistry rests on the same groundwork.</li>
+    <li><b>Dirty Pictures (2010).</b> Étienne Sauret's documentary, premiered at SXSW, featuring the Shulgins, David Nichols, William Fantegrossi, John Mendelson and the former DEA agent Bob Sager. The title is Shulgin's own term for his chemical structure drawings.</li>
+    <li><b>The Shulgin Archive.</b> Notebooks, personal papers, photographs and media are being digitised by the Erowid Center — Earth and Fire Erowid, with Keeper Trout leading the scanning. Over $340,000 spent since 2015; the bulk of the scanning was finished by the end of 2024, with something over two hundred thousand documents captured and cataloguing continuing. The pharmacology notebooks, numbered 1–9 and A–F and spanning roughly 1960 to 1994, are published online.</li>
+    <li><b>Berkeley.</b> A 2025 grant from the Center for the Science of Psychedelics, funded through the Flourish Trust, supports an MDMA exhibition at the Berkeley Alembic in 2026 — described as a first step towards folding the archive into the university's library system.</li>
+  </ul>
+</section>
+
+<section id="record">
+  <h2>The record</h2>
+  <p class="sec-sub">The chronology, the compounds most often attributed to him, and the vocabulary.</p>
+
+  <div class="entries">
+    <div class="entry"><div><div class="n">1925</div></div><div><p>Born in Berkeley, California, on 17 June.</p></div></div>
+    <div class="entry"><div><div class="n">1943</div></div><div><p>Leaves Harvard in his second year for the Navy.</p></div></div>
+    <div class="entry"><div><div class="n">1954</div></div><div><p>Completes a PhD in biochemistry at UC Berkeley.</p></div></div>
+    <div class="entry"><div><div class="n">1960</div></div><div><p>First mescaline experience, on 2 April.</p></div></div>
+    <div class="entry"><div><div class="n">1961</div></div><div><p>Dow markets Zectran, his carbamate insecticide.</p></div></div>
+    <div class="entry"><div><div class="n">1963</div></div><div><p>First synthesis of DOM.</p></div></div>
+    <div class="entry"><div><div class="n">1966</div></div><div><p>Leaves Dow to work independently at the Farm.</p></div></div>
+    <div class="entry"><div><div class="n">1974</div></div><div><p>2C-B.</p></div></div>
+    <div class="entry"><div><div class="n">1976</div></div><div><p>Takes MDMA in September, eleven years after first making it.</p></div></div>
+    <div class="entry"><div><div class="n">1977</div></div><div><p>Introduces MDMA to the psychologist Leo Zeff.</p></div></div>
+    <div class="entry"><div><div class="n">1978</div></div><div><p>First paper on MDMA's action in humans, with David Nichols.</p></div></div>
+    <div class="entry"><div><div class="n">1981</div></div><div><p>Marries Ann Gotlieb on 4 July.</p></div></div>
+    <div class="entry"><div><div class="n">1988</div></div><div><p><i>Controlled Substances</i> published.</p></div></div>
+    <div class="entry"><div><div class="n">1991</div></div><div><p><i>PiHKAL</i>, through their own Transform Press.</p></div></div>
+    <div class="entry"><div><div class="n">1994</div></div><div><p>Raid on 27 October; the Schedule I licence is surrendered.</p></div></div>
+    <div class="entry"><div><div class="n">1997</div></div><div><p><i>TiHKAL</i>.</p></div></div>
+    <div class="entry"><div><div class="n">2011</div></div><div><p><i>The Shulgin Index</i>, volume one.</p></div></div>
+    <div class="entry"><div><div class="n">2014</div></div><div><p>Dies at the Farm on 2 June, aged 88.</p></div></div>
+    <div class="entry"><div><div class="n">2022</div></div><div><p>Ann Shulgin dies on 9 July, aged 91.</p></div></div>
+  </div>
+
+  <p class="note" style="margin-bottom:26px">Nineteen dates, and only three of them are compounds. The shape of the life is mostly institutional: a job, a licence, a book, a raid.</p>
+
+  <div class="rows">
+    <div class="row head"><div class="t">Compound</div><div class="b">Family</div><div class="c">Year</div><div class="d">Note</div></div>
+    <div class="row"><div class="t">Mescaline</div><div class="b">natural</div><div class="c">1960</div><div class="d">first trip</div></div>
+    <div class="row"><div class="t">Zectran</div><div class="b">carbamate</div><div class="c">1961</div><div class="d">not psychoactive</div></div>
+    <div class="row"><div class="t">DOM</div><div class="b">DOx</div><div class="c">1963</div><div class="d">became STP</div></div>
+    <div class="row"><div class="t">2C-B</div><div class="b">2C</div><div class="c">1974</div><div class="d">his favourite</div></div>
+    <div class="row"><div class="t">MDMA</div><div class="b">Merck, 1912</div><div class="c">1976</div><div class="d">bioassay only</div></div>
+  </div>
+
+  <div class="gloss" style="margin-top:26px">
+    <dl>
+      <dt>PiHKAL</dt><dd>Phenethylamines I Have Known and Loved, 1991.</dd>
+      <dt>TiHKAL</dt><dd>Tryptamines I Have Known and Loved, 1997.</dd>
+      <dt>Bioassay</dt><dd>His word for taking a new compound himself and recording what happened.</dd>
+      <dt>The Farm</dt><dd>The house and laboratory near Lafayette, California.</dd>
+    </dl>
+    <dl>
+      <dt>The Tribe</dt><dd>The standing group of friends who sat for sessions and wrote them up.</dd>
+      <dt>Schedule I licence</dt><dd>The DEA analytical permit that made the work legal until 1994.</dd>
+      <dt>NPS</dt><dd>Novel psychoactive substances — the market that followed the books.</dd>
+      <dt>MAPS</dt><dd>Rick Doblin's organisation, which carried MDMA into clinical trials.</dd>
+    </dl>
+  </div>
+</section>
+
+<section id="caveats">
+  <h2>Caveats</h2>
+  <p class="sec-sub">How to use the above without repeating the errors that circulate about him.</p>
+
+  <ul class="plain">
+    <li><b>Say reintroduced, not invented.</b> Merck's 1912 priority and the 2010 reassessment in <i>Addiction</i> make the stronger claims simply wrong.</li>
+    <li><b>Treat his human data as uncontrolled self-report,</b> often with a sample of one, unblinded — not as clinical evidence. The peer-reviewed Shulgin–Nichols work and the academic histories carry more weight than the admiring secondary accounts.</li>
+    <li><b>Hold both halves of the legacy.</b> Open publication advanced legitimate research and seeded an uncontrolled global market. Any invocation of his name should carry the documented harms alongside the therapeutic promise.</li>
+    <li><b>Go to primary sources where you can.</b> The Erowid archive and laboratory notebooks, the Transform Press editions, the <i>C&amp;EN</i> and <i>Chemistry World</i> obituaries, the 2005 <i>New York Times Magazine</i> profile and the peer-reviewed histories. Treat vendor pages, forums and AI-generated reference sites as low confidence.</li>
+  </ul>
+
+  <div class="gate" id="gate" style="margin-top:26px">
+    <p class="lead">Sourcing</p>
+    <h3>What is contested</h3>
+    <p class="blurb">Six specific points where sources disagree, where a common claim is out of date, or where the record leans on Shulgin's own semi-fictionalised telling. Worth opening before citing anything above.</p>
+    <button type="button" id="gateBtn" aria-expanded="false" aria-controls="gateBody">Show it</button>
+    <div class="gate-body" id="gateBody">
+      <ul class="plain">
+        <li><b>The compound count varies by source.</b> Nearly 200, over 200, over 230, nearly 250 — the spread reflects different definitions (synthesised, bioassayed, first described) and a self-reported tally.</li>
+        <li><b>The raid is sometimes dated 1993,</b> including by PBS/Nova. Contemporaneous accounts put it at 27 October 1994.</li>
+        <li><b>MDMA-assisted therapy is not approved.</b> In August 2024 the FDA issued a complete response letter declining the Lykos Therapeutics application for PTSD. Descriptions of a vindicated psychedelic renaissance describe a trajectory, not a finished fact.</li>
+        <li><b>Much of the biographical colour is his own.</b> <i>PiHKAL</i> and <i>TiHKAL</i> are semi-fictionalised, and MAPS, Erowid and Transform Press are sympathetic parties. For contested points — his exact role in MDMA's history, the DOM/STP episode — prefer independent scholarship.</li>
+        <li><b>The more sensational claims are weakly sourced.</b> That he personally supplied the DOM that reached the street is addressed in a peer-reviewed 2024 account; suggestions of DEA political protection rest mostly on secondary or partisan sources.</li>
+        <li><b>The Wikipedia article carries a maintenance flag</b> from September 2024, for reliance on non-independent sources and a non-neutral, overly positive tone outside the lead. Corroborate anything taken from it.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>Compiled from published obituaries and profiles, peer-reviewed histories of MDMA and DOM, the Shulgins' own books and interviews, and the Erowid Shulgin Archive. Quotations are attributed to the outlet that first carried them.</p>
+  <p>This is a biographical and scientific-legacy summary. It deliberately contains no synthesis routes, precursors or dosages, including for compounds discussed by name.</p>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* expandable steps */
+  document.querySelectorAll('#steps .step').forEach(function(step){
+    var btn = step.querySelector('.step-btn');
+    var chev = step.querySelector('.chev');
+    btn.setAttribute('aria-expanded','false');
+    btn.addEventListener('click', function(){
+      var open = step.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(chev) chev.textContent = open ? '\u2013' : '+';
+    });
+  });
+
+  /* disclosure */
+  var gate = document.getElementById('gate');
+  if(gate){
+    var gbtn = document.getElementById('gateBtn');
+    gbtn.addEventListener('click', function(){
+      var open = gate.classList.toggle('open');
+      gbtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      gbtn.textContent = open ? 'Hide it again' : 'Show it';
+    });
+  }
+
+  /* nav scroll-spy — reads the nav, no config needed */
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav a'));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function spy(){
+    var y = window.scrollY + 110, idx = 0;
+    sections.forEach(function(s,i){ if(s && s.offsetTop <= y) idx = i; });
+    links.forEach(function(a,i){ a.classList.toggle('on', i === idx); });
+  }
+  window.addEventListener('scroll', spy, {passive:true});
+  spy();
+})();
+</script>
+</body>
+</html>

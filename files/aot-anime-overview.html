@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Attack on Titan — Before you start</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Karla:wght@400;500;600&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light only;
+
+    --paper:#F6F1E7;
+    --raised:#FCFAF5;
+
+    --ink:#3E3A33;
+    --ink-mid:#6B665C;
+    --ink-soft:#9A9488;
+
+    --line:#E3DBCB;
+    --line-soft:#EDE6D8;
+
+    --rose:#C99A93;
+    --sage:#9DB39A;
+    --sky:#A3B8C9;
+    --sand:#DCC49A;
+
+    --hand:"Caveat","Bradley Hand","Segoe Script",cursive;
+    --print:"Patrick Hand","Comic Sans MS",cursive;
+    --body:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;
+
+    --maxw:760px;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;background:var(--paper)}
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+  }
+
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--body);font-size:16.5px;line-height:1.62;
+    -webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  a{color:var(--ink)}
+  :focus-visible{outline:2px solid var(--sky);outline-offset:3px;border-radius:3px}
+
+  /* masthead */
+  header.top{padding:34px 0 30px}
+  .meta{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);display:flex;flex-wrap:wrap;gap:2px 14px;margin-bottom:16px}
+  .meta span::after{content:" ·";color:var(--line)}
+  .meta span:last-child::after{content:""}
+  .kicker{font-family:var(--print);font-size:16px;color:var(--ink-mid);margin:0 0 2px}
+  h1{font-family:var(--hand);font-weight:700;font-size:clamp(46px,11vw,74px);line-height:.94;margin:0;color:var(--ink)}
+  .thesis{max-width:54ch;margin:20px 0 0;font-size:16.5px;color:var(--ink-mid)}
+  .thesis b{color:var(--ink);font-weight:600}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:40;background:rgba(246,241,231,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;overflow-x:auto;scrollbar-width:none;padding-top:0;padding-bottom:0}
+  nav .wrap::-webkit-scrollbar{display:none}
+  nav a{font-family:var(--print);font-size:15px;color:var(--ink-soft);text-decoration:none;padding:11px 13px;white-space:nowrap;border-bottom:2px solid transparent}
+  nav a:hover{color:var(--ink-mid)}
+  nav a.on{color:var(--ink);border-bottom-color:var(--sand)}
+
+  /* sections */
+  section{padding:44px 0 4px}
+  section + section{border-top:1px solid var(--line-soft)}
+  h2{font-family:var(--hand);font-weight:700;font-size:clamp(32px,7vw,44px);line-height:1;margin:0;color:var(--ink)}
+  .sec-sub{color:var(--ink-mid);font-size:15.5px;margin:10px 0 26px;max-width:58ch}
+
+  /* plain list */
+  ul.plain{list-style:none;padding:0;margin:0;border-top:1px solid var(--line)}
+  ul.plain li{padding:12px 0 12px 20px;border-bottom:1px solid var(--line-soft);font-size:15.5px;position:relative;color:var(--ink-mid)}
+  ul.plain li::before{content:"";position:absolute;left:1px;top:1.35em;width:8px;height:2px;border-radius:2px;background:var(--sand)}
+  ul.plain li b{color:var(--ink);font-weight:600}
+
+  /* entries */
+  .entries{border-top:1px solid var(--line)}
+  .entry{display:grid;grid-template-columns:158px 1fr;gap:18px;padding:14px 2px;border-bottom:1px solid var(--line-soft);align-items:start}
+  .entry:last-child{border-bottom:0}
+  .entry .n{font-family:var(--hand);font-weight:700;font-size:24px;line-height:1.05;color:var(--ink)}
+  .entry .k{font-family:var(--print);font-size:13px;color:var(--ink-soft);margin-top:2px}
+  .entry p{margin:0;font-size:15.5px;color:var(--ink-mid)}
+  .entry p + p{margin-top:5px}
+  @media(max-width:560px){
+    .entry{grid-template-columns:1fr;gap:4px}
+    .entry .k{margin-bottom:4px}
+  }
+
+  /* release table */
+  .rel{border-top:1px solid var(--line)}
+  .row{
+    display:grid;grid-template-columns:1fr 82px 74px 66px;gap:12px;
+    padding:11px 2px;border-bottom:1px solid var(--line-soft);align-items:baseline;
+  }
+  .row.head{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);border-bottom-color:var(--line)}
+  .row .t{font-size:15.5px}
+  .row .e,.row .y,.row .s{font-family:var(--print);font-size:14.5px;color:var(--ink-mid)}
+  .row .s{color:var(--ink-soft)}
+  .row.film{background:var(--raised)}
+  @media(max-width:600px){
+    .row{grid-template-columns:1fr auto;gap:2px 12px}
+    .row .y{grid-column:2;text-align:right}
+    .row .e{grid-column:1;font-size:13.5px;color:var(--ink-soft)}
+    .row .s{grid-column:2;text-align:right;font-size:13.5px}
+    .row.head{display:none}
+  }
+
+  /* two-up cards */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:620px){.duo{grid-template-columns:1fr}}
+  .box{background:var(--raised);border:1px solid var(--line);border-radius:6px;padding:18px 18px 20px;border-top:3px solid var(--line)}
+  .box.a{border-top-color:var(--sage)}
+  .box.b{border-top-color:var(--rose)}
+  .box h3{font-family:var(--hand);font-weight:700;font-size:28px;line-height:1;margin:0 0 10px}
+  .box p{margin:0 0 8px;font-size:15px;color:var(--ink-mid)}
+  .box p:last-child{margin-bottom:0}
+
+  /* note */
+  .note{font-family:var(--print);font-size:15.5px;color:var(--ink-mid);border-left:2px solid var(--sand);padding-left:12px;margin:20px 0 0;line-height:1.5}
+
+  /* spoiler gate */
+  .gate{background:var(--raised);border:1px solid var(--line);border-left:3px solid var(--sky);border-radius:6px;padding:18px 20px 20px}
+  .gate .lead{font-family:var(--print);font-size:14.5px;color:var(--ink-soft);margin:0 0 4px}
+  .gate h3{font-family:var(--hand);font-weight:700;font-size:28px;line-height:1;margin:0 0 8px}
+  .gate .blurb{margin:0 0 14px;font-size:15px;color:var(--ink-mid)}
+  .gate button{
+    font-family:var(--print);font-size:15px;color:var(--ink);
+    background:var(--paper);border:1px solid var(--line);border-radius:999px;
+    padding:6px 16px;cursor:pointer;
+  }
+  .gate button:hover{background:#F1EADC}
+  #gateBody{display:none;margin-top:16px;border-top:1px solid var(--line-soft);padding-top:4px}
+  .gate.open #gateBody{display:block}
+
+  /* glossary */
+  .gloss{display:grid;grid-template-columns:1fr 1fr;gap:0 26px}
+  @media(max-width:620px){.gloss{grid-template-columns:1fr}}
+  .gloss dl{margin:0}
+  .gloss dt{font-family:var(--hand);font-weight:700;font-size:21px;margin-top:14px;color:var(--ink)}
+  .gloss dd{margin:0;font-size:15px;color:var(--ink-mid)}
+
+  footer{padding:38px 0 60px;color:var(--ink-soft);font-size:14px;border-top:1px solid var(--line);margin-top:36px}
+  footer p{margin:0 0 8px;max-width:62ch}
+  footer strong{color:var(--ink-mid)}
+
+  @media print{
+    nav{display:none}
+    body{background:#fff}
+    #gateBody{display:block!important}
+    section{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="meta">
+      <span>Hajime Isayama</span>
+      <span>2013–2023</span>
+      <span>89 episodes</span>
+      <span>~35 hours</span>
+      <span>Complete</span>
+    </div>
+    <p class="kicker">Before you start</p>
+    <h1>Attack on Titan</h1>
+    <p class="thesis">
+      A dark fantasy war story that begins as a siege and does not stay one. It is a finished work
+      with a real ending, adapted closely from a manga that ran for twelve years.
+      <b>It is also relentlessly grim, and it is not trying to be anything else.</b>
+    </p>
+  </div>
+</header>
+
+<nav>
+  <div class="wrap">
+    <a href="#premise">The premise</a>
+    <a href="#tone">What it's like</a>
+    <a href="#people">The people</a>
+    <a href="#words">The vocabulary</a>
+    <a href="#order">The release maze</a>
+    <a href="#extras">Side material</a>
+    <a href="#shape">The shape</a>
+    <a href="#game">The game</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="premise">
+  <h2>The premise</h2>
+  <p class="sec-sub">Everything below is established in the first two episodes. None of it is a spoiler.</p>
+  <ul class="plain">
+    <li><b>Humanity lives inside three concentric walls.</b> They are roughly fifty metres tall and they have held for a hundred years. Wall Maria is the outermost, then Wall Rose, then Wall Sina at the centre. Nobody living remembers the outside.</li>
+    <li><b>Outside the walls are Titans.</b> They are naked, humanoid, and between three and fifteen metres tall. They have no visible genitals and no apparent digestive purpose. They eat people anyway.</li>
+    <li><b>They cannot be killed conventionally.</b> Limbs regrow. Wounds close. The one weak point is a specific patch at the nape of the neck, roughly one metre by ten centimetres. Cut it deeply enough and the Titan dies.</li>
+    <li><b>The nape is at the back of the neck, high up.</b> That single anatomical fact dictates the entire military doctrine, and it is why the show looks the way it does.</li>
+    <li><b>Soldiers fly.</b> ODM gear is a harness with grappling hooks and pressurised gas canisters. It lets a person swing between buildings and trees, land on a Titan's shoulders, and cut down. The animation of this is the show's signature.</li>
+    <li><b>The story opens in the year 845.</b> A Titan far larger than any recorded appears above the wall and kicks a hole in it. That is episode one.</li>
+  </ul>
+  <p class="note">The first season follows three childhood friends who survive that day and enlist. That is the whole setup. The show adds to it steadily and does not explain everything for a long time.</p>
+</section>
+
+<section id="tone">
+  <h2>What it's like to watch</h2>
+  <p class="sec-sub">This is the part most summaries skip. The register is unusual and it is worth knowing in advance.</p>
+
+  <div class="duo">
+    <div class="box a">
+      <h3>What it does well</h3>
+      <p>The action is spatial and legible. The ODM sequences are choreographed in three dimensions and hold up.</p>
+      <p>The score by Hiroyuki Sawano is loud, choral and unsubtle, and it is a large part of why the show lands.</p>
+      <p>The plotting is tight. There is almost no filler across all 89 episodes, because it adapts a manga that was already written.</p>
+      <p>It commits. Setups pay off, sometimes forty episodes later.</p>
+    </div>
+    <div class="box b">
+      <h3>What it asks of you</h3>
+      <p>Named characters die constantly and without ceremony. There is no plot armour and the show establishes this early.</p>
+      <p>Children are eaten on screen. So are parents, in front of children.</p>
+      <p>There is sustained body horror, on-screen dismemberment, and in later seasons atrocity and war-crime imagery.</p>
+      <p>The early seasons are shouty and melodramatic. Some people bounce off the first few episodes for this reason.</p>
+    </div>
+  </div>
+
+  <p class="note">The show is rated 17+ and earns it. It is not gore for its own sake, but it does not flinch and it does not let up.</p>
+</section>
+
+<section id="people">
+  <h2>The people</h2>
+  <p class="sec-sub">Names only, with no roles given away. You meet almost all of them in the first season.</p>
+
+  <div class="entries">
+    <div class="entry"><div><div class="n">Eren Yeager</div><div class="k">the protagonist</div></div><div><p>Angry, stubborn, fifteen at the start. Wants to see the ocean and to kill every Titan, in roughly that order.</p></div></div>
+    <div class="entry"><div><div class="n">Mikasa Ackerman</div><div class="k">his adoptive sister</div></div><div><p>Graduated top of her cadet class by a wide margin. Follows Eren by choice.</p></div></div>
+    <div class="entry"><div><div class="n">Armin Arlert</div><div class="k">their friend</div></div><div><p>Physically the weakest of the three, and the one who solves things.</p></div></div>
+    <div class="entry"><div><div class="n">Levi Ackerman</div><div class="k">captain, Survey Corps</div></div><div><p>Introduced partway through season one. Short, blunt, and the most effective soldier alive. The show's most popular character by a distance.</p></div></div>
+    <div class="entry"><div><div class="n">Erwin Smith</div><div class="k">commander, Survey Corps</div></div><div><p>Sends people to die on purpose and knows exactly what that costs.</p></div></div>
+    <div class="entry"><div><div class="n">Hange Zoë</div><div class="k">squad leader</div></div><div><p>Studies Titans with unsettling enthusiasm.</p></div></div>
+    <div class="entry"><div><div class="n">The 104th Cadets</div><div class="k">the class</div></div><div><p>Jean, Sasha, Connie, Reiner, Bertholdt, Annie, Ymir, Krista, Marco. They train together in season one and the show spends real time on all of them.</p></div></div>
+  </div>
+</section>
+
+<section id="words">
+  <h2>The vocabulary</h2>
+  <p class="sec-sub">Terms that arrive without explanation in the first few episodes.</p>
+
+  <div class="gloss">
+    <dl>
+      <dt>ODM gear</dt>
+      <dd>Omni-Directional Mobility gear. Older subtitles call it 3D Manoeuvre Gear or Vertical Manoeuvring Equipment. Same thing.</dd>
+      <dt>Survey Corps</dt>
+      <dd>Also translated Scout Regiment. They go outside the walls. Very high casualty rate, very low recruitment.</dd>
+      <dt>Garrison</dt>
+      <dd>Man the walls and the cannons. The largest branch.</dd>
+      <dt>Military Police</dt>
+      <dd>Stationed in the interior, away from danger. Only the top ten cadets in a class may join.</dd>
+    </dl>
+    <dl>
+      <dt>Shiganshina</dt>
+      <dd>The district in Wall Maria where the story starts.</dd>
+      <dt>Trost</dt>
+      <dd>A district of Wall Rose, and the setting of the board game.</dd>
+      <dt>Colossal Titan</dt>
+      <dd>The sixty-metre one from episode one. Steams constantly.</dd>
+      <dt>Armoured Titan</dt>
+      <dd>The one with plated skin. Appears alongside it.</dd>
+    </dl>
+  </div>
+</section>
+
+<section id="order">
+  <h2>The release maze</h2>
+  <p class="sec-sub">Four seasons, six broadcast blocks, two feature-length specials, and one theatrical recut. The episode numbers run continuously from 1 to 89, which is the simplest way to hold it in your head.</p>
+
+  <div class="rel">
+    <div class="row head"><div class="t">Block</div><div class="e">Episodes</div><div class="y">Year</div><div class="s">Studio</div></div>
+    <div class="row"><div class="t">Season 1</div><div class="e">1–25</div><div class="y">2013</div><div class="s">WIT</div></div>
+    <div class="row"><div class="t">Season 2</div><div class="e">26–37</div><div class="y">2017</div><div class="s">WIT</div></div>
+    <div class="row"><div class="t">Season 3, Part 1</div><div class="e">38–49</div><div class="y">2018</div><div class="s">WIT</div></div>
+    <div class="row"><div class="t">Season 3, Part 2</div><div class="e">50–59</div><div class="y">2019</div><div class="s">WIT</div></div>
+    <div class="row"><div class="t">The Final Season, Part 1</div><div class="e">60–75</div><div class="y">2020–21</div><div class="s">MAPPA</div></div>
+    <div class="row"><div class="t">The Final Season, Part 2</div><div class="e">76–87</div><div class="y">2022</div><div class="s">MAPPA</div></div>
+    <div class="row"><div class="t">The Final Chapters, Special 1</div><div class="e">88</div><div class="y">2023</div><div class="s">MAPPA</div></div>
+    <div class="row"><div class="t">The Final Chapters, Special 2</div><div class="e">89</div><div class="y">2023</div><div class="s">MAPPA</div></div>
+    <div class="row film"><div class="t">THE LAST ATTACK <span style="color:var(--ink-soft);font-family:var(--print);font-size:13.5px">film</span></div><div class="e">= 88 + 89</div><div class="y">2024–25</div><div class="s">MAPPA</div></div>
+  </div>
+
+  <ul class="plain" style="margin-top:24px">
+    <li><b>The season names are marketing, not structure.</b> "The Final Season" spans three years and four separate broadcasts. In story terms it is one continuous stretch.</li>
+    <li><b>Episodes 88 and 89 are feature-length.</b> Roughly 60 and 85 minutes.</li>
+    <li><b>THE LAST ATTACK is a theatrical recut</b> of those same two specials into one 145-minute film, with reworked sound and visuals and a non-canon joke scene after the credits. It covers identical story events.</li>
+    <li><b>The studio changes at episode 60.</b> WIT hands off to MAPPA. The art style, colour grading and animation approach all shift noticeably at that point.</li>
+    <li><b>It is finished.</b> The manga ended in April 2021 at 139 chapters. The anime adapted that ending. Nothing is left dangling and no continuation is pending.</li>
+  </ul>
+</section>
+
+<section id="extras">
+  <h2>Side material</h2>
+  <p class="sec-sub">None of it is load-bearing. The main plot never assumes you have seen any of it.</p>
+
+  <div class="entries">
+    <div class="entry"><div><div class="n">OADs</div><div class="k">eight shorts</div></div><div><p>Bundled with Japanese manga volumes. Mostly side stories and character bits. "Ilse's Notebook" is the one Isayama wrote himself and the only one that touches main-plot lore.</p></div></div>
+    <div class="entry"><div><div class="n">No Regrets</div><div class="k">two episodes</div></div><div><p>Levi's backstory, before he joined the Survey Corps. Adapted from a spin-off manga.</p></div></div>
+    <div class="entry"><div><div class="n">Lost Girls</div><div class="k">three episodes</div></div><div><p>Side stories centred on Annie and Mikasa.</p></div></div>
+    <div class="entry"><div><div class="n">Recap films</div><div class="k">three</div></div><div><p>Compilations of seasons already broadcast. No new story content.</p></div></div>
+    <div class="entry"><div><div class="n">Junior High</div><div class="k">comedy spin-off</div></div><div><p>The cast as middle-schoolers. Entirely non-canon parody.</p></div></div>
+    <div class="entry"><div><div class="n">Live action</div><div class="k">two films, 2015</div></div><div><p>A separate Japanese adaptation with a different story and different characters. Poorly received.</p></div></div>
+  </div>
+
+  <p class="note">Streaming varies by country. Crunchyroll carries the complete run subbed and dubbed. Hulu carries it in the US. Netflix carries it in some regions and not others. The English dub is widely considered strong, which is not true of every anime of this era.</p>
+</section>
+
+<section id="shape">
+  <h2>The shape of the story</h2>
+  <p class="sec-sub">A structural map, hidden by default.</p>
+
+  <div class="gate" id="gate">
+    <p class="lead">Mild structural spoilers</p>
+    <h3>How it is built</h3>
+    <p class="blurb">
+      No plot events, no reveals, no character fates. What follows describes how the story is
+      shaped and where its tone changes — the kind of thing you would notice on a rewatch. Some
+      people want this before committing 35 hours. Some would rather not know.
+    </p>
+    <button type="button" id="gateBtn" aria-expanded="false" aria-controls="gateBody">Show it</button>
+
+    <div id="gateBody">
+      <ul class="plain">
+        <li><b>It moves in three registers.</b> It opens as siege horror. It becomes a mystery about the walls themselves. It ends as something closer to political tragedy. The genre shift is deliberate and it is the reason the show is discussed the way it is.</li>
+        <li><b>The first shift lands early.</b> Around a third of the way through season one, the premise you were sold changes materially. If the opening episodes feel like a straightforward monster show, that is temporary.</li>
+        <li><b>The Final Season opens cold.</b> New setting, new characters, new time frame, and no immediate explanation. This lasts for several episodes and it is intentional, not a mistake. A lot of viewers stall here.</li>
+        <li><b>The moral framing inverts.</b> The show gradually stops having a side you are meant to be on. Who counts as the aggressor is the central question of the back half.</li>
+        <li><b>The ending is divisive.</b> It is one of the most argued-about endings in the medium. Both the manga and anime versions draw the same criticism. Going in aware of that is different from going in spoiled.</li>
+        <li><b>The opening credits change meaning.</b> The season one opening in particular reads very differently once you finish. This is widely noted and is not an accident.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="game">
+  <h2>Where the board game sits</h2>
+  <p class="sec-sub">The Last Stand adapts one specific event from early in the series. Everything in the box comes from the first three seasons.</p>
+
+  <div class="entries">
+    <div class="entry"><div><div class="n">The scenario</div></div><div><p>The Titan breach at Trost, roughly episodes 5 to 13. The supply depot behind that wall is what makes the district worth defending.</p></div></div>
+    <div class="entry"><div><div class="n">The tower and cannons</div></div><div><p>Wall-mounted artillery is the Garrison's actual doctrine in the show. It is largely ineffective against Titans, which the game reflects: the cannons deplete and never come back.</p></div></div>
+    <div class="entry"><div><div class="n">The nine levels</div></div><div><p>A direct translation of ODM gear. Position and vertical movement are the entire tactical language of the show's combat.</p></div></div>
+    <div class="entry"><div><div class="n">Neck Slash</div></div><div><p>The nape. It is the only way to kill a Titan in the fiction, so it is the only way to win in the game.</p></div></div>
+    <div class="entry"><div><div class="n">Citizen tokens</div></div><div><p>Civilian evacuation is a live problem during the Trost arc and a recurring source of casualties.</p></div></div>
+    <div class="entry"><div><div class="n">The eight Heroes</div></div><div><p>All introduced by the end of season three. Playing the game will not spoil anything past that point.</p></div></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p><strong>Attack on Titan</strong> (Shingeki no Kyojin). Manga by Hajime Isayama, serialised 2009–2021. Anime adaptation 2013–2023, produced by WIT Studio and MAPPA. Music by Hiroyuki Sawano.</p>
+  <p>Season and episode counts are as broadcast. Streaming rights shift by region and over time, so treat the availability note as a starting point rather than a current listing.</p>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var gate = document.getElementById('gate');
+  var btn = document.getElementById('gateBtn');
+  btn.addEventListener('click', function(){
+    var open = gate.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? 'Hide it again' : 'Show it';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav a'));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function spy(){
+    var y = window.scrollY + 110;
+    var idx = 0;
+    sections.forEach(function(s, i){ if(s && s.offsetTop <= y) idx = i; });
+    links.forEach(function(a, i){ a.classList.toggle('on', i === idx); });
+  }
+  window.addEventListener('scroll', spy, {passive:true});
+  spy();
+})();
+</script>
+</body>
+</html>

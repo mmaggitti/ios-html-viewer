@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Hamilton Morris — a research brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Karla:wght@400;500;600&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   PAPER — warm document style
+   Accent meanings for THIS document:
+     rose → contested ground: criticism, disputes, unverified claims
+     sage → the documented record: dates, publications, primary sources
+     sky  → sourcing and gated detail the reader chooses to open
+     sand → emphasis, list bullets, active nav
+   ============================================================ */
+
+:root{
+  color-scheme: light only;
+
+  --paper:#F6F1E7;      /* canvas                        */
+  --raised:#FCFAF5;     /* panels — lighter than canvas  */
+
+  --ink:#3E3A33;        /* body            10.0:1        */
+  --ink-mid:#6B665C;    /* secondary        5.1:1        */
+  --ink-soft:#736D5F;   /* labels           4.6:1        */
+  --ink-faint:#9A9488;  /* non-text only    2.7:1        */
+
+  --line:#E3DBCB;       /* structural hairline           */
+  --line-soft:#EDE6D8;  /* within-group hairline         */
+
+  --rose:#C99A93;
+  --sage:#9DB39A;
+  --sky:#A3B8C9;
+  --sand:#DCC49A;
+
+  --rose-wash:#F2E2DF;
+  --sage-wash:#E6EDE4;
+  --sky-wash:#E5EBF0;
+  --sand-wash:#F1EADC;
+
+  --hand:"Caveat","Bradley Hand","Segoe Script",cursive;
+  --print:"Patrick Hand","Comic Sans MS",cursive;
+  --body:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;
+
+  --maxw:760px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--paper)}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--body);font-size:16.5px;line-height:1.62;
+  -webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;
+}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--sky);outline-offset:3px;border-radius:3px}
+
+/* ---------- masthead ---------- */
+header.top{padding:34px 0 30px}
+.meta{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);display:flex;flex-wrap:wrap;gap:2px 14px;margin-bottom:16px}
+.meta span::after{content:" ·";color:var(--line)}
+.meta span:last-child::after{content:""}
+.kicker{font-family:var(--print);font-size:16px;color:var(--ink-mid);margin:0 0 2px}
+h1{font-family:var(--hand);font-weight:700;font-size:clamp(46px,11vw,74px);line-height:.94;margin:0}
+.thesis{max-width:54ch;margin:20px 0 0;font-size:16.5px;color:var(--ink-mid)}
+.thesis b{color:var(--ink);font-weight:600}
+
+/* ---------- sticky nav ---------- */
+nav{position:sticky;top:0;z-index:40;background:rgba(246,241,231,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;overflow-x:auto;scrollbar-width:none;padding-top:0;padding-bottom:0}
+nav .wrap::-webkit-scrollbar{display:none}
+nav a{font-family:var(--print);font-size:15px;color:var(--ink-soft);text-decoration:none;padding:11px 13px;white-space:nowrap;border-bottom:2px solid transparent}
+nav a:hover{color:var(--ink-mid)}
+nav a.on{color:var(--ink);border-bottom-color:var(--sand)}
+
+/* ---------- sections ---------- */
+section{padding:44px 0 4px}
+section + section{border-top:1px solid var(--line-soft)}
+h2{font-family:var(--hand);font-weight:700;font-size:clamp(32px,7vw,44px);line-height:1;margin:0}
+.sec-sub{color:var(--ink-mid);font-size:15.5px;margin:10px 0 26px;max-width:58ch}
+
+/* ---------- 1 · plain list ---------- */
+ul.plain{list-style:none;padding:0;margin:0;border-top:1px solid var(--line)}
+ul.plain li{padding:12px 0 12px 20px;border-bottom:1px solid var(--line-soft);font-size:15.5px;position:relative;color:var(--ink-mid)}
+ul.plain li::before{content:"";position:absolute;left:1px;top:1.35em;width:8px;height:2px;border-radius:2px;background:var(--sand)}
+ul.plain li b{color:var(--ink);font-weight:600}
+
+/* ---------- 2 · entry rows ---------- */
+.entries{border-top:1px solid var(--line)}
+.entry{display:grid;grid-template-columns:158px 1fr;gap:18px;padding:14px 2px;border-bottom:1px solid var(--line-soft);align-items:start}
+.entry:last-child{border-bottom:0}
+.entry .n{font-family:var(--hand);font-weight:700;font-size:24px;line-height:1.05;color:var(--ink)}
+.entry .k{font-family:var(--print);font-size:13px;color:var(--ink-soft);margin-top:2px}
+.entry p{margin:0;font-size:15.5px;color:var(--ink-mid)}
+.entry p + p{margin-top:5px}
+@media(max-width:560px){.entry{grid-template-columns:1fr;gap:4px}.entry .k{margin-bottom:4px}}
+
+/* ---------- 3 · duo boxes ---------- */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:620px){.duo{grid-template-columns:1fr}}
+.box{background:var(--raised);border:1px solid var(--line);border-radius:6px;padding:18px 18px 20px;border-top:3px solid var(--line)}
+.box.a{border-top-color:var(--sage)}
+.box.b{border-top-color:var(--rose)}
+.box h3{font-family:var(--hand);font-weight:700;font-size:28px;line-height:1;margin:0 0 10px}
+.box p{margin:0 0 8px;font-size:15px;color:var(--ink-mid)}
+.box p:last-child{margin-bottom:0}
+
+/* ---------- 4 · margin note ---------- */
+.note{font-family:var(--print);font-size:15.5px;color:var(--ink-mid);border-left:2px solid var(--sand);padding-left:12px;margin:20px 0 0;line-height:1.5}
+
+/* ---------- 5 · numbered steps ---------- */
+.steps{border-top:1px solid var(--line)}
+.step{border-bottom:1px solid var(--line)}
+.step-btn{width:100%;background:none;border:0;color:inherit;font:inherit;display:grid;grid-template-columns:30px 1fr auto;gap:12px;align-items:center;padding:14px 6px;text-align:left;cursor:pointer;border-radius:4px}
+.step-btn:hover{background:var(--raised)}
+.step-n{font-family:var(--hand);font-weight:700;font-size:22px;color:var(--ink-soft);line-height:1}
+.step-t{font-size:16px;font-weight:500}
+.pill{font-family:var(--print);font-size:13px;color:var(--ink-mid);padding:1px 9px;border-radius:999px;white-space:nowrap}
+.pill.a{background:var(--sage-wash)}
+.pill.b{background:var(--rose-wash)}
+.pill.c{background:var(--sky-wash)}
+.step-body{display:none;padding:0 6px 18px 42px;color:var(--ink-mid);font-size:15.5px}
+.step.open .step-body{display:block}
+.step-body p{margin:0 0 9px}
+.chev{font-family:var(--print);font-size:17px;color:var(--ink-soft)}
+@media(max-width:520px){
+  .step-btn{grid-template-columns:24px 1fr;gap:10px}
+  .step-btn .pill{grid-column:2;justify-self:start;margin-top:2px}
+  .chev{display:none}
+  .step-body{padding-left:34px}
+}
+
+/* ---------- 6 · data rows ---------- */
+.rows{border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:1fr 82px 74px 66px;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line-soft);align-items:baseline}
+.row.head{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);border-bottom-color:var(--line)}
+.row .t{font-size:15.5px}
+.row .b,.row .c,.row .d{font-family:var(--print);font-size:14.5px;color:var(--ink-mid)}
+.row .d{color:var(--ink-soft)}
+@media(max-width:600px){
+  .row{grid-template-columns:1fr auto;gap:2px 12px}
+  .row .c{grid-column:2;text-align:right}
+  .row .b{grid-column:1;font-size:13.5px;color:var(--ink-soft)}
+  .row .d{grid-column:2;text-align:right;font-size:13.5px}
+  .row.head{display:none}
+}
+
+/* ---------- 7 · disclosure ---------- */
+.gate{background:var(--raised);border:1px solid var(--line);border-left:3px solid var(--sky);border-radius:6px;padding:18px 20px 20px}
+.gate .lead{font-family:var(--print);font-size:14.5px;color:var(--ink-soft);margin:0 0 4px}
+.gate h3{font-family:var(--hand);font-weight:700;font-size:28px;line-height:1;margin:0 0 8px}
+.gate .blurb{margin:0 0 14px;font-size:15px;color:var(--ink-mid)}
+.gate button{font-family:var(--print);font-size:15px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:6px 16px;cursor:pointer}
+.gate button:hover{background:var(--sand-wash)}
+.gate .gate-body{display:none;margin-top:16px;border-top:1px solid var(--line-soft);padding-top:4px}
+.gate.open .gate-body{display:block}
+
+/* ---------- 8 · definition pairs ---------- */
+.gloss{display:grid;grid-template-columns:1fr 1fr;gap:0 26px}
+@media(max-width:620px){.gloss{grid-template-columns:1fr}}
+.gloss dl{margin:0}
+.gloss dt{font-family:var(--hand);font-weight:700;font-size:21px;margin-top:14px;color:var(--ink)}
+.gloss dd{margin:0;font-size:15px;color:var(--ink-mid)}
+
+/* ---------- footer ---------- */
+footer{padding:38px 0 60px;color:var(--ink-soft);font-size:14px;border-top:1px solid var(--line);margin-top:36px}
+footer p{margin:0 0 8px;max-width:62ch}
+
+/* ---------- print ---------- */
+@media print{
+  nav,.chev,.gate button{display:none}
+  body{background:#fff}
+  .step-body,.gate .gate-body{display:block!important}
+  section{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="meta">
+      <span>Research brief</span><span>Compiled August 2026</span><span>Living subject</span><span>Some claims contested</span>
+    </div>
+    <p class="kicker">Journalist, chemist, lightning rod</p>
+    <h1>Hamilton Morris</h1>
+    <p class="thesis">
+      Born 14 April 1987. He spent a decade making drug journalism that took chemistry
+      seriously, then largely stopped making it — and moved to a bench in Philadelphia and a
+      consulting desk at a psychedelic pharmaceutical company.
+      <b>The live question about him is no longer what he films, but what happens when a
+      journalist becomes a stakeholder in the subject he covered.</b>
+    </p>
+  </div>
+</header>
+
+<nav>
+  <div class="wrap">
+    <a href="#brief">In brief</a>
+    <a href="#origins">Origins</a>
+    <a href="#arc">Trajectory</a>
+    <a href="#words">Journalism</a>
+    <a href="#screen">The series</a>
+    <a href="#science">Science</a>
+    <a href="#positions">Positions</a>
+    <a href="#contested">Contested</a>
+    <a href="#sources">Sourcing</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="brief">
+  <h2>In brief</h2>
+  <p class="sec-sub">Four things worth knowing before the detail.</p>
+  <ul class="plain">
+    <li><b>Two careers, one subject.</b> He created and hosted <i>Hamilton's Pharmacopeia</i> — three seasons, twenty episodes, October 2016 to February 2021 — while doing laboratory work on novel psychedelics and dissociatives with the chemist Jason Wallach in Philadelphia.</li>
+    <li><b>The centre of gravity has moved.</b> Since leaving Vice in 2021 he has been a full-time chemistry consultant at Compass Pathways, continued bench research at Saint Joseph's University, and run a listener-supported podcast still publishing into 2026.</li>
+    <li><b>The publication record is real.</b> He is a co-author on peer-reviewed pharmacology papers, including a 2023 <i>Nature Communications</i> study identifying which 5-HT2A signalling pathways predict psychedelic effects.</li>
+    <li><b>He is polarising inside his own field.</b> Widely respected for chemistry-first, non-moralising reporting; sharply criticised for entering the for-profit psychedelic industry and for a long public feud with the advocacy outlet Psymposia.</li>
+  </ul>
+  <p class="note">This page carries no synthesis routes, preparation methods or dosing. It describes what he studies and why it matters, not how anything is made.</p>
+</section>
+
+<section id="origins">
+  <h2>Origins</h2>
+  <p class="sec-sub">A documentary household, a chemistry-set childhood, and an unusually early start in print.</p>
+  <ul class="plain">
+    <li><b>Born in New York City, raised in Cambridge, Massachusetts,</b> an only child. He became a bar mitzvah at Masada.</li>
+    <li><b>His father is Errol Morris,</b> the documentarian behind <i>The Thin Blue Line</i> and <i>The Fog of War</i>. His mother is Julia Sheehan. The two met in Wisconsin while Errol was researching serial killers, married in 1984, and Sheehan produced on some of his films, among them <i>Fast, Cheap &amp; Out of Control</i> and <i>Standard Operating Procedure</i>.</li>
+    <li><b>He acted in commercials as a teenager,</b> most visibly a 2002 spot for the first-generation iPod.</li>
+    <li><b>Chemistry came first; drugs came second.</b> A childhood curiosity about explosives and poisons met a teenage interest in psychoactives read up on Erowid and Bluelight. He extracted salvinorin A from salvia leaves while still a teenager.</li>
+    <li><b>University of Chicago, then The New School,</b> where he studied anthropology and chemistry at Eugene Lang and took a BSc in liberal arts. He was already writing for Vice as a sophomore.</li>
+  </ul>
+  <p class="note">Sources split on his mother's field — most mainstream profiles say art historian, others say Holocaust scholar. Both descriptors circulate. Treat it as unsettled.</p>
+</section>
+
+<section id="arc">
+  <h2>Trajectory</h2>
+  <p class="sec-sub">Six phases, in the order they happened. Tap any one to open it.</p>
+  <div class="steps" id="steps">
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">1</span><span class="step-t">The column</span><span class="pill c">2008–09</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>A 2008 Vice piece — <i>The Magic Jews: From Manischewitz to Mescaline</i>, a first-person account of taking LSD with a group of Hasidic Jews — persuaded the magazine to hand him a monthly print column in 2009. It was called <i>Hamilton's Pharmacopeia</i>. Everything since carries that name.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">2</span><span class="step-t">Web documentaries</span><span class="pill c">2009–16</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Roughly ten short films for VBS.tv, covering the sapo frog, Haitian zombification, Alexander and Ann Shulgin, and psilocybin truffles in Amsterdam. The format of the television series is already visible here.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">3</span><span class="step-t">Television</span><span class="pill c">2016–21</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>The series proper premiered on Viceland on 26 October 2016 and ended on 8 February 2021 after three seasons and twenty episodes. Alongside it he worked as a correspondent and producer on <i>Vice on HBO</i> and as a science editor at Vice.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">4</span><span class="step-t">The bench</span><span class="pill a">early 2010s onward</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Over a decade of synthesis and pharmacology work in Jason Wallach's lab at the Philadelphia College of Pharmacy — the University of the Sciences until its 2022 merger into Saint Joseph's University. This ran in parallel with the filmmaking, not after it.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">5</span><span class="step-t">Industry</span><span class="pill b">2020–</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>He joined the advisory board of Mind Cure Health in October 2020. On 10 September 2021 Compass Pathways announced it had engaged him as a full-time consultant, working primarily at its Discovery Center in Philadelphia and advising on new compounds for mental-health therapeutics. He left Vice at the same time.</p>
+        <p>This is the hinge the criticism turns on.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">6</span><span class="step-t">On his own terms</span><span class="pill c">2020–</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>The Hamilton Morris Podcast launched in 2020, first on Patreon and later on YouTube and podcast platforms, with guests including Rick Strassman, Michael Pollan and the psychiatrist Casey Paleos on the 2024 FDA rejection of MDMA for PTSD. Episodes were still going out in early 2026.</p>
+        <p>In August 2025 he released a short film, <i>Synthesizing Ariadne in Alexander Shulgin's Lab</i>, about a non-hallucinogenic 5-HT2A agonist under investigation for Parkinson's and dementia. He screened it with live Q&amp;As, including at the Roxy Cinema in New York that October.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section id="words">
+  <h2>Journalism</h2>
+  <p class="sec-sub">The print work that preceded the camera, and mostly explains it.</p>
+  <div class="entries">
+
+    <div class="entry">
+      <div><div class="n">The Magic Jews</div><div class="k">Vice · 2008</div></div>
+      <div><p>Taking LSD with Hasidic Jews. The piece that won him the column.</p></div>
+    </div>
+
+    <div class="entry">
+      <div><div class="n">Shulgin, last interview</div><div class="k">Vice · 2010</div></div>
+      <div><p>With the chemist he regards as the most important figure in psychedelic history. The Shulgin lineage runs through most of his later work.</p></div>
+    </div>
+
+    <div class="entry">
+      <div><div class="n">I Walked with a Zombie</div><div class="k">Harper's · Nov 2011</div></div>
+      <div><p>On the religious and cultural context of Haitian zombification, rather than the pharmacological folklore it is usually reduced to.</p></div>
+    </div>
+
+    <div class="entry">
+      <div><div class="n">Blood Spore</div><div class="k">Harper's · 2013</div></div>
+      <div><p>Murder and mushrooms. He also published <i>Gaboxadol</i> in Harper's the same year.</p></div>
+    </div>
+
+    <div class="entry">
+      <div><div class="n">Sea DMT</div><div class="k">Vice · 2013</div></div>
+      <div><p>Written with Jason Wallach, on 5-bromo-DMT from marine organisms — the first published sign of the collaboration that became his second career.</p></div>
+    </div>
+
+  </div>
+  <p class="note">The house method is first-person investigation plus real chemical literacy, with neither celebration nor alarm. The Guardian's Hermione Hoby described a mix of "gonzo abandon and scholarly rigour"; the New York Times reached for Hunter S. Thompson, others for Louis Theroux.</p>
+</section>
+
+<section id="screen">
+  <h2>The series</h2>
+  <p class="sec-sub">Three seasons on Viceland and Vice TV, from 26 October 2016 to 8 February 2021, preceded by around ten web documentaries.</p>
+  <ul class="plain">
+    <li><b>Reported as Vice TV's highest-rated series.</b> Amazon lists 4.7 out of 5 from 553 ratings for season three; IMDb episode scores run from 7.8 for <i>Fish N' Trips</i> to 9.0 for <i>A Clandestine Chemist's Tale</i>. It streams on Hulu and Amazon Prime Video.</li>
+    <li><b>He produced for his father, once.</b> Associate producer on Errol Morris's <i>My Psychedelic Love Story</i> (2020), about Timothy Leary and Joanna Harcourt-Smith.</li>
+    <li><b>Nothing has replaced it.</b> No fourth season or successor series has been announced; the 2025 short film and the podcast are the current output.</li>
+  </ul>
+
+  <p class="note">A fair shorthand from the coverage: doing for drugs roughly what Anthony Bourdain did for food — travel, expertise, and a refusal to treat the subject as a moral problem first.</p>
+
+  <div class="gloss" style="margin-top:26px">
+    <dl>
+      <dt>Methaqualone</dt><dd>Quaaludes and their long afterlife in South Africa.</dd>
+      <dt>Bufo alvarius</dt><dd>The Sonoran Desert toad and 5-MeO-DMT.</dd>
+      <dt>Amanita muscaria</dt><dd>Muscimol, and the pharmaceutical gaboxadol.</dd>
+      <dt>Ergot</dt><dd>The LSD episode, with David Nichols and Bryan Roth.</dd>
+    </dl>
+    <dl>
+      <dt>Ibogaine</dt><dd>And tramadol, reported in Africa.</dd>
+      <dt>Xenon</dt><dd>Anaesthesia and its strange regulatory position.</dd>
+      <dt>Bufotenine snuffs</dt><dd>South American preparations and their chemistry.</dd>
+      <dt>And the rest</dt><dd>PCP, salvia, peyote, kratom, DMT, ketamine, mushrooms in Mexico, methamphetamine.</dd>
+    </dl>
+  </div>
+</section>
+
+<section id="science">
+  <h2>The science</h2>
+  <p class="sec-sub">Not a hobby appended to a media career. The laboratory work predates the television and outlasted it.</p>
+  <ul class="plain">
+    <li><b>The lab.</b> More than a decade with the pharmacologist Jason Wallach, at the University of the Sciences and then Saint Joseph's University after the 2022 merger.</li>
+    <li><b>The subjects.</b> Arylcyclohexylamine dissociatives — diphenidine, methoxphenidine and relatives — and tryptamines: what they are, how they bind, and what that predicts.</li>
+    <li><b>Bufotenine.</b> Working with the ethnobotanist Jonathan Ott, he has reported that pure 5-HO-DMT is an active classical psychedelic sitting between DMT and 5-MeO-DMT, against older accounts treating it as merely a toxic cardiovascular stimulant. This rests on self-report, not on trials.</li>
+    <li><b>5-bromo-DMT.</b> He has synthesised the only known psychedelic isolated from a marine organism.</li>
+  </ul>
+
+  <div class="rows" style="margin-top:26px">
+    <div class="row head"><div class="t">Paper</div><div class="b">Journal</div><div class="c">Year</div><div class="d">Role</div></div>
+    <div class="row"><div class="t">From PCP to MXE — review of non-medical dissociative use</div><div class="b">Drug Test. Anal.</div><div class="c">2014</div><div class="d">co-author</div></div>
+    <div class="row"><div class="t">First reported fatalities involving 2-methoxydiphenidine</div><div class="b">J. Anal. Toxicol.</div><div class="c">2015</div><div class="d">co-author</div></div>
+    <div class="row"><div class="t">Characterisation of diphenidine and methoxphenidine</div><div class="b">Drug Test. Anal.; PLOS ONE</div><div class="c">2015–18</div><div class="d">co-author</div></div>
+    <div class="row"><div class="t">5-HT2A signalling pathways and psychedelic potential</div><div class="b">Nature Comms</div><div class="c">2023</div><div class="d">11 of 19</div></div>
+  </div>
+
+  <p class="note">The 2023 result in plain terms: 5-HT2A-Gq recruitment efficacy predicts psychedelic potential in mice; β-arrestin2 recruitment does not. That distinction is exactly what a company would need in order to design a drug without the trip.</p>
+
+  <div class="duo" style="margin-top:26px">
+    <div class="box a">
+      <h3>Co-author, yes</h3>
+      <p>He is author eleven of nineteen on the 2023 <i>Nature Communications</i> paper, led by Wallach with John McCorvy as senior author, under a Saint Joseph's affiliation.</p>
+      <p>A genuine contributor to multi-author work — not its sole driver.</p>
+    </div>
+    <div class="box b">
+      <h3>Inventor, no</h3>
+      <p>Despite loose press association with Compass's patent activity, he is not named on any patent or application. The lab's filings list Wallach, McCorvy, Halberstadt and Dybek.</p>
+      <p>Co-authorship and inventorship are legally different things, and the distinction is routinely collapsed in coverage.</p>
+    </div>
+  </div>
+</section>
+
+<section id="positions">
+  <h2>Positions</h2>
+  <p class="sec-sub">What he actually argues, separated from what he is accused of.</p>
+  <ul class="plain">
+    <li><b>Prohibition has failed on its own terms.</b> He treats a century of it as an experiment producing adulteration and misinformation rather than less use. Decriminalisation is his floor, alongside drug checking and honest education. He has made the case repeatedly on the Joe Rogan Experience, including in 2018 and again in an episode aired 27 June 2024.</li>
+    <li><b>Scheduling misreads risk.</b> PCP is his standing example of a substance whose reputation outruns its actual profile.</li>
+    <li><b>Synthetic over wild.</b> There is no sustainable way to milk wild Sonoran Desert toads at scale, so use synthetic 5-MeO-DMT and put the money into habitat instead. He argued this at the 2019 World Bufo Alvarius Congress and in the season three premiere.</li>
+    <li><b>He corrected his own record in public.</b> He had misidentified the author of the 1983 pamphlet on the psychedelic toad; the real "Albert Most" was Ken Nelson, whom he interviewed roughly six weeks before Nelson died. He reissued the pamphlet with proceeds to toad conservation and Parkinson's research.</li>
+    <li><b>Sceptical of the entourage effect</b> as applied to psychedelics, which he treats as a form of vitalism dressed as pharmacology.</li>
+    <li><b>He defends pharmaceutical patents</b> in the psychedelic space. This is where most of the criticism starts.</li>
+  </ul>
+</section>
+
+<section id="contested">
+  <h2>Contested ground</h2>
+  <p class="sec-sub">Everything in this section is disputed by someone. The job here is to mark the disagreement accurately, not to settle it.</p>
+  <ul class="plain">
+    <li><b>The conflict-of-interest charge.</b> Taking a full-time industry role in 2021 while keeping a journalist's public standing drew sustained criticism, sharpened by Compass's aggressive approach to psilocybin patents.</li>
+    <li><b>The Wonderland remarks.</b> At the Miami conference he reportedly dismissed critical academic work on right-wing psychedelia by Brian Pace and Neşe Devenot in blunt terms, and characterised critical reporting, including by the journalist Shayla Love, as moralising.</li>
+    <li><b>The Psymposia feud.</b> A multi-year, personal and escalating dispute with the advocacy outlet, including a rebuttal series and counter-accusations about funding and conduct on both sides. Observers such as Jules Evans's <i>Ecstatic Integration</i> read it as symptomatic of a wider rift in the field.</li>
+  </ul>
+
+  <div class="gate" id="gate" style="margin-top:26px">
+    <p class="lead">Handle with care</p>
+    <h3>How to read the feud</h3>
+    <p class="blurb">Both sides are partisan, several specific claims are unverified, and the argument has run long enough to have its own folklore. Open this for the contours — it will not tell you who is right.</p>
+    <button type="button" id="gateBtn" aria-expanded="false" aria-controls="gateBody">Show it</button>
+    <div class="gate-body" id="gateBody">
+      <ul class="plain">
+        <li><b>What is verifiable.</b> The dates of his industry roles, the contents of the patent filings, and the author lists on the papers. These settle the narrow factual questions about who is credited with what.</li>
+        <li><b>What is not.</b> Characterisations of motive, accounts of private conduct, and claims about the other side's funding or dealings with government agencies. Neither side's version has been independently confirmed.</li>
+        <li><b>The structural point survives the personalities.</b> A journalist who becomes a paid participant in an industry he covered has a real conflict to disclose, whatever one makes of the people arguing about it.</li>
+        <li><b>Read both, or neither.</b> Psymposia's coverage and his own podcast and interviews are the primary sources; a third party such as <i>Ecstatic Integration</i> is the closest thing to a neutral vantage point.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="sources">
+  <h2>Sourcing</h2>
+  <p class="sec-sub">Where to go next, and what to discount on sight.</p>
+  <ul class="plain">
+    <li><b>Fix the dates from primary documents.</b> The Compass press release of 10 September 2021 and the Mind Cure release of October 2020 pin the industry roles exactly.</li>
+    <li><b>Use PubMed for the science,</b> especially the 2014 review and the 2023 paper, PMID 38102107. Read the author list and the competing-interests note rather than press summaries of either.</li>
+    <li><b>Discount the aggregators.</b> Celebrity-biography pages and AI-generated wikis repeat each other's errors; the net-worth figures circulating for him are unverified and are excluded here.</li>
+    <li><b>Treat the self-experimentation claims as what they are.</b> Reports such as the bufotenine characterisation are n-of-1 bioassay, not controlled research, and he presents them as such.</li>
+    <li><b>Four things would change this picture:</b> a fourth season or new series; a patent naming him as inventor; a first-author paper; or a formal resolution of the Psymposia dispute.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>Compiled from a research brief, August 2026. Dates, affiliations and publication details were checked against primary sources where those exist; family background, the Psymposia dispute and all self-report pharmacology are flagged in place as uncertain.</p>
+  <p>Quotation is limited to a short characterising phrase from The Guardian. No synthesis routes, preparation methods or dosing information appear anywhere on this page, by design.</p>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* expandable steps */
+  document.querySelectorAll('#steps .step').forEach(function(step){
+    var btn = step.querySelector('.step-btn');
+    var chev = step.querySelector('.chev');
+    btn.setAttribute('aria-expanded','false');
+    btn.addEventListener('click', function(){
+      var open = step.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(chev) chev.textContent = open ? '\u2013' : '+';
+    });
+  });
+
+  /* disclosure */
+  var gate = document.getElementById('gate');
+  if(gate){
+    var gbtn = document.getElementById('gateBtn');
+    gbtn.addEventListener('click', function(){
+      var open = gate.classList.toggle('open');
+      gbtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      gbtn.textContent = open ? 'Hide it again' : 'Show it';
+    });
+  }
+
+  /* nav scroll-spy — reads the nav, no config needed */
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav a'));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function spy(){
+    var y = window.scrollY + 110, idx = 0;
+    sections.forEach(function(s,i){ if(s && s.offsetTop <= y) idx = i; });
+    links.forEach(function(a,i){ a.classList.toggle('on', i === idx); });
+  }
+  window.addEventListener('scroll', spy, {passive:true});
+  spy();
+})();
+</script>
+</body>
+</html>

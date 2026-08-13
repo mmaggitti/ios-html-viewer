@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>The Last Stand — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Karla:wght@400;500;600&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light only;
+
+    --paper:#F6F1E7;
+    --raised:#FCFAF5;
+    --sunk:#EFE9DC;
+
+    --ink:#3E3A33;
+    --ink-mid:#6B665C;
+    --ink-soft:#9A9488;
+
+    --line:#E3DBCB;
+    --line-soft:#EDE6D8;
+
+    --rose:#C99A93;
+    --sage:#9DB39A;
+    --sky:#A3B8C9;
+    --sand:#DCC49A;
+
+    --hand:"Caveat","Bradley Hand","Segoe Script",cursive;
+    --print:"Patrick Hand","Comic Sans MS",cursive;
+    --body:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;
+
+    --maxw:760px;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;background:var(--paper)}
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+  }
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--body);
+    font-size:16.5px;
+    line-height:1.62;
+    -webkit-text-size-adjust:100%;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+
+  a{color:var(--ink)}
+  :focus-visible{outline:2px solid var(--sky);outline-offset:3px;border-radius:3px}
+
+  /* ---------- shared small type ---------- */
+  .label{
+    font-family:var(--print);
+    font-size:13px;
+    letter-spacing:.05em;
+    color:var(--ink-soft);
+  }
+
+  /* ---------- masthead ---------- */
+  header.top{padding:34px 0 30px}
+  .meta{
+    font-family:var(--print);font-size:13.5px;color:var(--ink-soft);
+    display:flex;flex-wrap:wrap;gap:2px 14px;margin-bottom:16px;
+  }
+  .meta span::after{content:" ·";color:var(--line)}
+  .meta span:last-child::after{content:""}
+
+  .kicker{
+    font-family:var(--print);font-size:16px;color:var(--ink-mid);
+    margin:0 0 2px;letter-spacing:.02em;
+  }
+  h1{
+    font-family:var(--hand);font-weight:700;
+    font-size:clamp(50px,12vw,80px);
+    line-height:.92;margin:0;letter-spacing:0;color:var(--ink);
+  }
+  .thesis{
+    max-width:54ch;margin:20px 0 0;font-size:16.5px;color:var(--ink-mid);
+  }
+  .thesis b{color:var(--ink);font-weight:600}
+
+  /* asymmetry panel — two quiet cards */
+  .asym{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:28px}
+  @media(max-width:620px){.asym{grid-template-columns:1fr}}
+  .asym > div{
+    background:var(--raised);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:18px 18px 20px;
+    border-top:3px solid var(--line);
+  }
+  .asym .titan{border-top-color:var(--rose)}
+  .asym .heroes{border-top-color:var(--sage)}
+  .side-tag{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);display:block;margin-bottom:6px}
+  .asym h3{
+    font-family:var(--hand);font-weight:700;font-size:32px;line-height:1;
+    margin:0 0 12px;color:var(--ink);
+  }
+  .asym ul{margin:0;padding:0;list-style:none}
+  .asym li{position:relative;padding-left:18px;margin-bottom:7px;font-size:15px;color:var(--ink-mid)}
+  .asym li::before{content:"";position:absolute;left:0;top:.72em;width:8px;height:2px;border-radius:2px;background:var(--line)}
+  .asym .titan li::before{background:var(--rose)}
+  .asym .heroes li::before{background:var(--sage)}
+  .asym .qual{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);margin:14px 0 0}
+
+  /* ---------- nav ---------- */
+  nav{
+    position:sticky;top:0;z-index:40;
+    background:rgba(246,241,231,.95);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);
+  }
+  nav .wrap{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;padding-top:0;padding-bottom:0}
+  nav .wrap::-webkit-scrollbar{display:none}
+  nav a{
+    font-family:var(--print);font-size:15px;color:var(--ink-soft);
+    text-decoration:none;padding:11px 13px;white-space:nowrap;
+    border-bottom:2px solid transparent;
+  }
+  nav a:hover{color:var(--ink-mid)}
+  nav a.on{color:var(--ink);border-bottom-color:var(--sand)}
+
+  /* ---------- sections ---------- */
+  section{padding:44px 0 4px}
+  section + section{border-top:1px solid var(--line-soft)}
+  h2{
+    font-family:var(--hand);font-weight:700;
+    font-size:clamp(34px,7.5vw,46px);line-height:1;margin:0;color:var(--ink);
+  }
+  .sec-sub{color:var(--ink-mid);font-size:15.5px;margin:10px 0 26px;max-width:58ch}
+
+  /* ---------- round stepper ---------- */
+  .steps{border-top:1px solid var(--line)}
+  .step{border-bottom:1px solid var(--line)}
+  .step-btn{
+    width:100%;background:none;border:0;color:inherit;font:inherit;
+    display:grid;grid-template-columns:30px 1fr auto;gap:12px;align-items:center;
+    padding:14px 6px;text-align:left;cursor:pointer;border-radius:4px;
+  }
+  .step-btn:hover{background:var(--raised)}
+  .step-n{font-family:var(--hand);font-weight:700;font-size:22px;color:var(--ink-soft);line-height:1}
+  .step-t{font-size:16px;font-weight:500}
+  .actor{
+    font-family:var(--print);font-size:13px;color:var(--ink-mid);
+    padding:1px 9px;border-radius:999px;white-space:nowrap;
+  }
+  .a-titan{background:#F2E2DF}
+  .a-hero{background:#E6EDE4}
+  .a-both{background:#E5EBF0}
+  .step-body{display:none;padding:0 6px 18px 42px;color:var(--ink-mid);font-size:15.5px}
+  .step.open .step-body{display:block}
+  .step-body p{margin:0 0 9px}
+  .note{
+    font-family:var(--print);font-size:15.5px;color:var(--ink-mid);
+    border-left:2px solid var(--sand);padding-left:12px;margin-top:12px;line-height:1.5;
+  }
+  .chev{font-family:var(--print);font-size:17px;color:var(--ink-soft)}
+  @media(max-width:520px){
+    .step-btn{grid-template-columns:24px 1fr;gap:10px}
+    .step-btn .actor{grid-column:2;justify-self:start;margin-top:2px}
+    .chev{display:none}
+    .step-body{padding-left:34px}
+  }
+
+  /* ---------- elevation ladder ---------- */
+  .elev-grid{display:grid;grid-template-columns:1fr 268px;gap:22px;align-items:start}
+  @media(max-width:740px){.elev-grid{grid-template-columns:1fr;gap:16px}}
+
+  .legend{
+    display:flex;gap:16px;flex-wrap:wrap;font-family:var(--print);font-size:14px;
+    color:var(--ink-soft);margin-bottom:14px;
+  }
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+
+  .ladder{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--raised)}
+  .lvl{
+    display:grid;grid-template-columns:6px 46px 1fr auto;align-items:center;
+    width:100%;background:none;border:0;border-bottom:1px solid var(--line-soft);
+    color:inherit;font:inherit;text-align:left;cursor:pointer;padding:0;
+  }
+  .lvl:last-child{border-bottom:0}
+  .lvl:hover{background:var(--paper)}
+  .lvl-bar{align-self:stretch;background:var(--line-soft)}
+  .lvl[data-kind="titan"] .lvl-bar{background:#EADCD9}
+  .lvl[data-kind="tower"] .lvl-bar{background:#E0E7ED}
+  .lvl[data-kind="ground"] .lvl-bar{background:#E4EAE2}
+  .lvl.sel[data-kind="titan"] .lvl-bar{background:var(--rose)}
+  .lvl.sel[data-kind="tower"] .lvl-bar{background:var(--sky)}
+  .lvl.sel[data-kind="ground"] .lvl-bar{background:var(--sage)}
+  .lvl-n{
+    font-family:var(--hand);font-weight:700;font-size:26px;line-height:1;
+    text-align:center;padding:11px 0;color:var(--ink-soft);
+  }
+  .lvl-mid{padding:9px 12px;min-width:0}
+  .lvl-name{font-size:15px}
+  .lvl-what{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);margin-top:0}
+  .lvl.sel{background:var(--paper)}
+  .lvl.sel .lvl-n,.lvl.sel .lvl-name{color:var(--ink)}
+  .lvl-hop{
+    font-family:var(--print);font-size:13px;color:var(--ink-soft);
+    padding-right:12px;opacity:0;white-space:nowrap;
+  }
+  .lvl.reach .lvl-hop{opacity:1}
+
+  .elev-info{
+    border:1px solid var(--line);border-radius:6px;background:var(--raised);
+    padding:16px 18px 18px;position:sticky;top:56px;
+  }
+  @media(max-width:740px){.elev-info{position:static}}
+  .elev-info h4{font-family:var(--hand);font-weight:700;font-size:28px;line-height:1;margin:0 0 2px}
+  .elev-info .kind{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);margin-bottom:12px}
+  .elev-info dl{margin:0;font-size:15px}
+  .elev-info dt{font-family:var(--print);font-size:13.5px;color:var(--ink-soft);margin-top:12px}
+  .elev-info dd{margin:1px 0 0;color:var(--ink-mid)}
+
+  /* ---------- reference entries ---------- */
+  .entries{border-top:1px solid var(--line)}
+  .entry{
+    display:grid;grid-template-columns:150px 1fr;gap:18px;
+    padding:14px 2px;border-bottom:1px solid var(--line-soft);align-items:start;
+  }
+  .entry:last-child{border-bottom:0}
+  .entry .n{font-family:var(--hand);font-weight:700;font-size:24px;line-height:1.05;color:var(--ink)}
+  .entry .k{font-family:var(--print);font-size:13px;color:var(--ink-soft);margin-top:2px}
+  .entry p{margin:0;font-size:15.5px;color:var(--ink-mid)}
+  .entry .cap{font-family:var(--print);font-size:14.5px;color:var(--ink-mid);margin-top:5px}
+  .entry.win .n{color:#8E7A5C}
+  @media(max-width:560px){
+    .entry{grid-template-columns:1fr;gap:4px}
+    .entry .k{margin-bottom:4px}
+  }
+
+  /* ---------- plain list ---------- */
+  ul.plain{list-style:none;padding:0;margin:0;border-top:1px solid var(--line)}
+  ul.plain li{
+    padding:12px 0 12px 20px;border-bottom:1px solid var(--line-soft);
+    font-size:15.5px;position:relative;color:var(--ink-mid);
+  }
+  ul.plain li::before{content:"";position:absolute;left:1px;top:1.35em;width:8px;height:2px;border-radius:2px;background:var(--sand)}
+  ul.plain li b{color:var(--ink);font-weight:600}
+
+  /* ---------- two-player ---------- */
+  .duel{
+    background:var(--raised);border:1px solid var(--line);
+    border-left:3px solid var(--sage);border-radius:6px;padding:20px 20px 22px;
+  }
+  .duel h3{font-family:var(--hand);font-weight:700;font-size:30px;line-height:1;margin:0 0 2px}
+  .duel .lead{font-family:var(--print);font-size:14px;color:var(--ink-soft);margin:0 0 14px}
+  .duel ul.plain li::before{background:var(--sage)}
+  .duel .after{margin:16px 0 0;font-size:15.5px;color:var(--ink-mid)}
+
+  /* ---------- footer ---------- */
+  footer{padding:38px 0 60px;color:var(--ink-soft);font-size:14px;border-top:1px solid var(--line);margin-top:36px}
+  footer p{margin:0 0 8px;max-width:62ch}
+  footer strong{color:var(--ink-mid)}
+  .verify{
+    font-family:var(--print);font-size:15px;color:var(--ink-mid);
+    border-left:2px solid var(--sky);padding-left:12px;margin:20px 0 0;line-height:1.5;
+  }
+
+  @media print{
+    nav,.chev{display:none}
+    body{background:#fff}
+    .step-body{display:block!important}
+    section{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="meta">
+      <span>Bauza &amp; Maublanc</span>
+      <span>2–5 players</span>
+      <span>30–45 min</span>
+      <span>One vs. many</span>
+    </div>
+    <p class="kicker">Attack on Titan</p>
+    <h1>The Last Stand</h1>
+    <p class="thesis">
+      Two people play two different games at the same table. The Titan player plays cards and hides
+      one of them. The Hero players roll dice and have to guess what the hidden card does.
+      <b>Every re-roll the Heroes make can hand the Titan more power.</b>
+    </p>
+
+    <div class="asym">
+      <div class="titan">
+        <span class="side-tag">Titan — one player</span>
+        <h3>Break the city</h3>
+        <ul>
+          <li>Destroy all 6 cannons, or</li>
+          <li>Eat all 12 citizens, or</li>
+          <li>Take the last heart from any one Hero</li>
+        </ul>
+        <p class="qual">Any one of these ends the game</p>
+      </div>
+      <div class="heroes">
+        <span class="side-tag">Heroes — one to four players</span>
+        <h3>Cut the nape</h3>
+        <ul>
+          <li>Drive the Titan's health into the Kill Zone</li>
+          <li>Then meet every condition on Neck Slash or Eradication in one round</li>
+        </ul>
+        <p class="qual">There is no other way for the Heroes to win</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="wrap">
+    <a href="#setup">Setup</a>
+    <a href="#round">The round</a>
+    <a href="#elevation">Elevation</a>
+    <a href="#dice">Dice</a>
+    <a href="#titan">Titan</a>
+    <a href="#tactics">Tactics</a>
+    <a href="#heroes">Heroes</a>
+    <a href="#duel">Two players</a>
+    <a href="#traps">Easy to miss</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="setup">
+  <h2>Setup</h2>
+  <p class="sec-sub">Build the tower and the Titan first. The rest takes two minutes.</p>
+  <ul class="plain">
+    <li><b>Build the board.</b> Assemble the tower. Put the 6 cannon pieces on it. Assemble the Titan standee. Slide the 6 platforms into it.</li>
+    <li><b>Set the trackers.</b> Put the health marker at the start of the Titan health track. Put the 12 citizen tokens at the Titan's feet.</li>
+    <li><b>Titan player.</b> Choose 1 of the 4 Titan cards. Take only the 7 action cards that match it. Return the rest to the box.</li>
+    <li><b>Each Hero player.</b> Choose 1 of the 8 Hero standees and a coloured base. Take the matching Hero card. Take 3 heart tokens. Take the 5 dice in your base colour.</li>
+    <li><b>Place the Heroes.</b> Each Hero starts on the ground (level 0) or on the tower (level 3 or level 5).</li>
+    <li><b>Tactics deck.</b> Shuffle the 7 tactics cards. Stack them face up. Only the top card is available.</li>
+  </ul>
+</section>
+
+<section id="round">
+  <h2>The round</h2>
+  <p class="sec-sub">Seven steps, in fixed order. Tap a step for the detail.</p>
+
+  <div class="steps" id="steps">
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">1</span><span class="step-t">The Titan player picks two action cards</span><span class="actor a-titan">Titan</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Play one card face up. Play the second card face down.</p>
+        <p>The face-up card is the Heroes' only warning. The face-down card is the bet they have to price.</p>
+        <p class="note">A card played this round is set aside and cannot be played next round. It comes back the round after. The Heroes can track this.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">2</span><span class="step-t">The Hero players roll their dice</span><span class="actor a-hero">Heroes</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>All Heroes roll their 5 dice at the same time.</p>
+        <p>Every die showing the Titan face goes to the Titan player straight away.</p>
+        <p>Heroes may then re-roll any remaining dice as often as they want. Roll one die or several. Pause to talk whenever you like.</p>
+        <p class="note">Every new Titan face also goes across. Re-rolling improves your hand and arms your opponent. That trade is the whole game.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">3</span><span class="step-t">The Titan player spends the surrendered dice</span><span class="actor a-titan">Titan</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Each ability on the Titan card costs a set number of Titan symbols.</p>
+        <p>The same ability may be triggered more than once if the symbols cover it. Dice of different colours may be mixed.</p>
+        <p>The Titan player then returns the spent dice to their owners.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">4</span><span class="step-t">The Hero players re-roll the returned dice</span><span class="actor a-hero">Heroes</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Only the dice the Titan player just gave back may be re-rolled. Dice you kept in step 2 are locked.</p>
+        <p class="note">Titan faces rolled now are set aside instead of surrendered. This re-roll is free. Always take it.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">5</span><span class="step-t">Resolve the action cards</span><span class="actor a-both">Both</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Resolve the face-up card first. Each action card prints the dice needed to cancel it. If the Heroes pay that cost, nothing happens. If they do not, the effect applies.</p>
+        <p>The Titan player then reveals the face-down card. The Heroes may cancel it the same way, with whatever dice are left.</p>
+        <p class="note">Taking a small visible hit to keep dice for the hidden card is a real option. This is the decision the game is built around.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">6</span><span class="step-t">The Hero players spend what is left</span><span class="actor a-hero">Heroes</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Spend remaining dice in any order: move, deal damage, cycle the tactics deck, or activate the current tactics card.</p>
+        <p>Damage depends entirely on where the Hero is standing. See the elevation section.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <button class="step-btn"><span class="step-n">7</span><span class="step-t">Reset</span><span class="actor a-both">Both</span><span class="chev">+</span></button>
+      <div class="step-body">
+        <p>Every player takes back all their dice. Nothing carries over to the next round.</p>
+        <p>The Titan player sets aside this round's action cards face up, then picks up the cards set aside in the previous round.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section id="elevation">
+  <h2>Elevation</h2>
+  <p class="sec-sub">Nine levels, stacked. Position decides what a Hero can do and what can reach them. Tap a level to see its options and where one move symbol takes you.</p>
+
+  <div class="legend">
+    <span><i style="background:var(--rose)"></i>On the Titan</span>
+    <span><i style="background:var(--sky)"></i>Tower</span>
+    <span><i style="background:var(--sage)"></i>Ground</span>
+  </div>
+
+  <div class="elev-grid">
+    <div class="ladder" id="ladder"></div>
+    <div class="elev-info" id="elevInfo"></div>
+  </div>
+</section>
+
+<section id="dice">
+  <h2>The six faces</h2>
+  <p class="sec-sub">Every Hero die has the same six faces. One of them works against you.</p>
+
+  <div class="entries">
+    <div class="entry">
+      <div><div class="n">Titan</div><div class="k">the skull</div></div>
+      <div>
+        <p>Hand this die to the Titan player at once. They spend it in step 3 to power an ability.</p>
+        <p class="cap">Exception: a Titan face rolled in step 4 is set aside, not surrendered.</p>
+      </div>
+    </div>
+    <div class="entry">
+      <div><div class="n">Move</div></div>
+      <div><p>Move one Hero up or down one level. Two shortcuts exist: ground to tower first floor, and tower first floor to tower second floor.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">Fight</div></div>
+      <div><p>Deal 1 damage. The Hero must be standing on the Titan.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">Cannon</div></div>
+      <div><p>Deal 2 damage. The Hero must be standing on the tower. How many cannons are left on your floor does not matter.</p></div>
+    </div>
+    <div class="entry">
+      <div><div class="n">Shield</div><div class="k">tactics symbol</div></div>
+      <div>
+        <p>Two uses. Cancel a Titan action, or send the top tactics card to the bottom of the deck to reach the next one.</p>
+        <p class="cap">Hard cap: the shields all Heroes spend in one round cannot exceed the number of cannons still standing.</p>
+      </div>
+    </div>
+    <div class="entry">
+      <div><div class="n">Dodge</div></div>
+      <div>
+        <p>Avoid an attack aimed at your level. Two dodges are needed. Only a Hero on a targeted level may spend them, and only for themselves.</p>
+        <p class="cap">Shields defend the group. Dodges defend one person. Do not mix them up.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="titan">
+  <h2>Titan abilities</h2>
+  <p class="sec-sub">Your Titan card lists three of these, each with its own symbol cost. This is what the dice the Heroes hand over can buy.</p>
+
+  <div class="entries">
+    <div class="entry"><div><div class="n">Regeneration X</div><div class="k">recover</div></div><div><p>Move the health marker back X spaces. Undoes Hero damage directly.</p></div></div>
+    <div class="entry"><div><div class="n">Devour X</div><div class="k">attack the city</div></div><div><p>Remove X citizen tokens from play. Twelve exist.</p></div></div>
+    <div class="entry"><div><div class="n">Crush X Cannons</div><div class="k">attack the city</div></div><div><p>You choose which cannons go. This also shrinks the Heroes' shield cap for every round that follows.</p></div></div>
+    <div class="entry"><div><div class="n">Hit Hero</div><div class="k">attack a Hero</div></div><div><p>One Hero loses a heart. The Hero players choose who.</p></div></div>
+    <div class="entry"><div><div class="n">Crush Heroes</div><div class="k">attack a Hero</div></div><div><p>One Hero loses a heart. You choose who. Aim at whoever is already low.</p></div></div>
+    <div class="entry"><div><div class="n">Obstruction</div><div class="k">deny</div></div><div><p>Pick one Hero die. Its owner sets it aside for the rest of the round.</p></div></div>
+    <div class="entry"><div><div class="n">Sudden Change</div><div class="k">rewrite</div></div><div><p>Swap one of your two played action cards for another from hand. Face down stays face down. Face up stays face up. This lets you punish a read.</p></div></div>
+    <div class="entry"><div><div class="n">Frenzy</div><div class="k">escalate</div></div><div><p>Add a third action card, face up. The Heroes now have three threats to pay for from one pool of dice.</p></div></div>
+  </div>
+</section>
+
+<section id="tactics">
+  <h2>Tactics cards</h2>
+  <p class="sec-sub">Seven cards in a fixed stack. Only the top one is available. Each sets three conditions: a Hero in one position, a Hero in another, and a symbol payment from the group. Meet all three in one round to trigger it, then remove it from the game.</p>
+
+  <div class="entries">
+    <div class="entry win"><div><div class="n">Neck Slash</div><div class="k">ends the game</div></div><div><p>The Heroes win. Needs the health marker inside the Kill Zone.</p></div></div>
+    <div class="entry win"><div><div class="n">Eradication</div><div class="k">ends the game</div></div><div><p>The Heroes win. Also needs the Kill Zone.</p></div></div>
+    <div class="entry"><div><div class="n">Fall Over</div><div class="k">huge swing</div></div><div><p>The Titan takes maximum damage at once. The marker jumps to the far end of the track.</p></div></div>
+    <div class="entry"><div><div class="n">Blinding Shot</div><div class="k">information</div></div><div><p>For the rest of the game the Titan plays both action cards face up. The hidden-card bet disappears.</p></div></div>
+    <div class="entry"><div><div class="n">Mutilation</div><div class="k">attrition</div></div><div><p>Remove one action card from the Titan's hand at random. It is gone for the game.</p></div></div>
+    <div class="entry"><div><div class="n">Healing Cover</div><div class="k">repair</div></div><div><p>Every Hero regains 1 heart, up to a maximum of 3.</p></div></div>
+    <div class="entry"><div><div class="n">Rescue</div><div class="k">repair</div></div><div><p>Return up to 4 citizen tokens to the Titan's feet.</p></div></div>
+  </div>
+
+  <ul class="plain" style="margin-top:24px">
+    <li><b>You cannot reorder the deck.</b> A shield sends the top card to the bottom. That is a queue, not a search.</li>
+    <li><b>Digging costs you defence.</b> Every shield spent hunting is a shield you cannot spend cancelling an action this round.</li>
+    <li><b>Some group payments scale with player count.</b> Fewer Heroes means a smaller payment. Read the number printed on the card in front of you.</li>
+  </ul>
+</section>
+
+<section id="heroes">
+  <h2>The eight Heroes</h2>
+  <p class="sec-sub">Each Hero breaks one rule. Pick a team that covers different problems, not the same one twice.</p>
+
+  <div class="entries">
+    <div class="entry"><div><div class="n">Eren</div><div class="k">redistribute</div></div><div><p>After rolling, give one die to each teammate. Take them back at the end of the round.</p></div></div>
+    <div class="entry"><div><div class="n">Sasha</div><div class="k">substitute</div></div><div><p>Her dodge results count as any symbol she needs.</p></div></div>
+    <div class="entry"><div><div class="n">Erwin</div><div class="k">substitute</div></div><div><p>He may use cannon results as fight results, and fight results as cannon results. He gets round the tower rule.</p></div></div>
+    <div class="entry"><div><div class="n">Mikasa</div><div class="k">amplify</div></div><div><p>Each of her results of one specific type counts double. Check the icon on her card.</p></div></div>
+    <div class="entry"><div><div class="n">Conny</div><div class="k">amplify</div></div><div><p>Each of his results of one specific type counts double. Check the icon on his card.</p></div></div>
+    <div class="entry"><div><div class="n">Levi</div><div class="k">deny the Titan</div></div><div><p>He never surrenders his Titan results. He also cannot re-roll them.</p></div></div>
+    <div class="entry"><div><div class="n">Armin</div><div class="k">search</div></div><div><p>For one shield, pull any tactics card to the top of the deck without disturbing the rest of the order. This is the strongest ability in the box.</p></div></div>
+    <div class="entry"><div><div class="n">Hange</div><div class="k">ignore position</div></div><div><p>She fires cannon results without standing on the tower.</p></div></div>
+  </div>
+</section>
+
+<section id="duel">
+  <h2>Two players</h2>
+  <p class="sec-sub">The box supports 1v1 directly. It is a listed variant, not a fan patch.</p>
+
+  <div class="duel">
+    <h3>The duel</h3>
+    <p class="lead">One Titan · one player running two Heroes</p>
+    <ul class="plain">
+      <li><b>One player takes the Titan.</b> The other picks two Heroes and controls both.</li>
+      <li><b>Tactics cards get easier.</b> With two Heroes on the table you meet only 2 of the 3 conditions on a tactics card.</li>
+      <li><b>The two win cards keep their teeth.</b> Neck Slash and Eradication still demand the Kill Zone and a Hero on level 8.</li>
+      <li><b>Group payments drop.</b> Collective symbol costs scale down with the number of Heroes.</li>
+    </ul>
+    <p class="after">
+      What survives: the hidden-card guess, the re-roll trade, and the shrinking shield cap. All three work fine at two.
+      What you lose: the argument between Heroes about who spends what. If that negotiation is the appeal, 1v1 is the thinner mode.
+    </p>
+  </div>
+</section>
+
+<section id="traps">
+  <h2>Easy to miss</h2>
+  <p class="sec-sub">The rules that get played wrong on the first night.</p>
+  <ul class="plain">
+    <li><b>Hero dice are public.</b> The Titan player sees every result and hears every plan. Discuss carefully, or not at all.</li>
+    <li><b>Cannons are your defence budget, not just a clock.</b> The shields the group can spend in a round are capped at the number of cannons left. Losing cannons makes every later round harder to survive.</li>
+    <li><b>Step 4 only re-rolls returned dice.</b> Dice you locked in during step 2 stay locked.</li>
+    <li><b>Nothing carries over.</b> Dice reset every round. You cannot bank symbols for a big turn.</li>
+    <li><b>The Titan's hand is trackable.</b> No action card can appear in back-to-back rounds. Watch the discard.</li>
+    <li><b>Levels are shared.</b> Several Heroes may stand on one level. That also means one attack can hit all of them.</li>
+    <li><b>Movement is one step at a time.</b> Level 4 to level 6 costs two moves, because it passes through level 5.</li>
+    <li><b>Dodges do not help your teammate.</b> Only the Hero on the targeted level can spend them, and only for themselves.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p><strong>Attack on Titan: The Last Stand.</strong> Designed by Antoine Bauza and Ludovic Maublanc. Published by Don't Panic Games and Cryptozoic, reprinted by Japanime Games.</p>
+  <p>These are rewritten notes, not the rulebook. They skip the illustrations, the examples, the flavour text and the printed icons. Keep the real rulebook and the cards on the table.</p>
+  <p class="verify">Two things to confirm against your cards: which symbol Mikasa doubles, and which symbol Conny doubles. The icons do not survive a text extraction.</p>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  document.querySelectorAll('#steps .step').forEach(function(step){
+    var btn = step.querySelector('.step-btn');
+    var chev = step.querySelector('.chev');
+    btn.setAttribute('aria-expanded','false');
+    btn.addEventListener('click', function(){
+      var open = step.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(chev) chev.textContent = open ? '\u2013' : '+';
+    });
+  });
+
+  var LEVELS = [
+    {n:8, kind:'titan',  name:'Nape',                what:'Fight \u2014 1 damage', adj:[7],
+     note:'The highest platform. In a two-Hero game the win cards need a Hero standing here.'},
+    {n:7, kind:'titan',  name:'Upper body',          what:'Fight \u2014 1 damage', adj:[6,8],
+     note:'Deep in Titan territory. A long climb back down if an attack lands.'},
+    {n:6, kind:'titan',  name:'Shoulder',            what:'Fight \u2014 1 damage', adj:[5,7],
+     note:'One move from the tower. The usual staging point before a push to the top.'},
+    {n:5, kind:'tower',  name:'Tower, second floor', what:'Cannon \u2014 2 damage', adj:[3,4,6],
+     note:'Best damage rate in the game, and one of the best connected levels on the board.'},
+    {n:4, kind:'titan',  name:'Torso',               what:'Fight \u2014 1 damage', adj:[3,5],
+     note:'Sits between the two tower floors. Either one is a single move away.'},
+    {n:3, kind:'tower',  name:'Tower, first floor',  what:'Cannon \u2014 2 damage', adj:[0,2,4,5],
+     note:'The hub. Four levels are one move away, including the ground and the upper floor.'},
+    {n:2, kind:'titan',  name:'Lower body',          what:'Fight \u2014 1 damage', adj:[1,3],
+     note:'Low value for damage. Useful mainly as a route.'},
+    {n:1, kind:'titan',  name:'Leg',                 what:'Fight \u2014 1 damage', adj:[0,2],
+     note:'The first foothold off the ground. Still exposed to low attacks.'},
+    {n:0, kind:'ground', name:'Ground',              what:'No damage possible',   adj:[1,3],
+     note:'You cannot hurt the Titan from here, and ground-level attacks target this space. Leave early.'}
+  ];
+
+  var byN = {};
+  LEVELS.forEach(function(l){ byN[l.n] = l; });
+
+  var ladder = document.getElementById('ladder');
+  var info = document.getElementById('elevInfo');
+
+  LEVELS.forEach(function(l){
+    var b = document.createElement('button');
+    b.className = 'lvl';
+    b.type = 'button';
+    b.dataset.kind = l.kind;
+    b.dataset.n = l.n;
+    b.setAttribute('aria-label', 'Level ' + l.n + ', ' + l.name);
+    b.innerHTML =
+      '<span class="lvl-bar"></span>' +
+      '<span class="lvl-n">' + l.n + '</span>' +
+      '<span class="lvl-mid"><span class="lvl-name">' + l.name + '</span>' +
+      '<span class="lvl-what">' + l.what + '</span></span>' +
+      '<span class="lvl-hop">one move</span>';
+    b.addEventListener('click', function(){ select(l.n); });
+    ladder.appendChild(b);
+  });
+
+  function kindLabel(k){
+    if(k === 'titan') return 'Platform on the Titan';
+    if(k === 'tower') return 'Tower floor';
+    return 'Table level';
+  }
+
+  function select(n){
+    var l = byN[n];
+    ladder.querySelectorAll('.lvl').forEach(function(el){
+      var en = parseInt(el.dataset.n, 10);
+      el.classList.toggle('sel', en === n);
+      el.classList.toggle('reach', l.adj.indexOf(en) !== -1);
+    });
+    var reach = l.adj.slice().sort(function(a,b){ return b - a; }).join(', ');
+    info.innerHTML =
+      '<h4>Level ' + l.n + ' \u2014 ' + l.name + '</h4>' +
+      '<div class="kind">' + kindLabel(l.kind) + '</div>' +
+      '<dl>' +
+        '<dt>Damage from here</dt><dd>' + l.what + '</dd>' +
+        '<dt>One move reaches</dt><dd>Level ' + reach + '</dd>' +
+        '<dt>Note</dt><dd>' + l.note + '</dd>' +
+      '</dl>';
+  }
+  select(5);
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav a'));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function spy(){
+    var y = window.scrollY + 110;
+    var idx = 0;
+    sections.forEach(function(s, i){ if(s && s.offsetTop <= y) idx = i; });
+    links.forEach(function(a, i){ a.classList.toggle('on', i === idx); });
+  }
+  window.addEventListener('scroll', spy, {passive:true});
+  spy();
+})();
+</script>
+</body>
+</html>
