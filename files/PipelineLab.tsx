@@ -83,6 +83,7 @@ void main(){
 
 const FS_MAIN = `#version 300 es
 precision highp float;
+precision highp int;
 in vec2 vUV; out vec4 outC;
 
 uniform sampler2D uLin;
@@ -94,6 +95,7 @@ uniform float uExp;
 uniform vec3  uLabGain;
 uniform int   uLab;
 uniform float uGrain;
+uniform float uGrainSize;
 uniform float uHalAmt;
 uniform vec2  uSize;
 uniform float uPixScale;  // source px per output px; 1.0 at full resolution
@@ -102,10 +104,30 @@ vec3 l2s(vec3 c){
   c = clamp(c, 0.0, 1.0);
   return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), c));
 }
-float hash(vec2 p){
-  p = fract(p * vec2(443.8975, 397.2973));
-  p += dot(p.xy, p.yx + 19.19);
-  return fract(p.x * p.y);
+uint uhash(uvec2 p, uint s){
+  uint h = p.x * 73856093u ^ p.y * 19349663u ^ s * 83492791u;
+  h ^= h >> 16; h *= 0x7feb352du;
+  h ^= h >> 15; h *= 0x846ca68bu;
+  h ^= h >> 16;
+  return h;
+}
+float urnd(vec2 c, uint s){
+  return float(uhash(uvec2(ivec2(c) + 16384), s) & 0x00FFFFFFu) / 16777216.0;
+}
+float vnoise(vec2 p, uint s){
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = urnd(i, s);
+  float b = urnd(i + vec2(1.0, 0.0), s);
+  float c = urnd(i + vec2(0.0, 1.0), s);
+  float d = urnd(i + vec2(1.0, 1.0), s);
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y) - 0.5;
+}
+float grainField(vec2 p, uint s){
+  float n = vnoise(p, s) * 0.62
+          + vnoise(p * 2.17 + 11.3, s + 7u) * 0.26
+          + vnoise(p * 4.31 + 27.9, s + 19u) * 0.12;
+  return n * 1.7;
 }
 float sigm(float z){ return 1.0 / (1.0 + exp(-z)); }
 float hd(float v, float c, float p){
@@ -150,7 +172,7 @@ void main(){
       float v = er ? (ec ? c.r : c.g) : (ec ? c.g : c.b);
       vec2 d = (px - uSize * 0.5) / length(uSize * 0.5);
       v *= 1.0 - 0.42 * dot(d, d);                        /* lens shading   */
-      float n1 = hash(px) - 0.5, n2 = hash(px + 37.0) - 0.5;
+      float n1 = urnd(floor(px), 101u) - 0.5, n2 = urnd(floor(px), 211u) - 0.5;
       v += n1 * 0.012;                                     /* read noise     */
       v += sqrt(max(v, 0.0)) * n2 * 0.045;                 /* shot noise     */
       v += 0.016;                                          /* black pedestal */
@@ -186,11 +208,18 @@ void main(){
   float h = texture(uHal, vUV).r * hl * uHalAmt;
   v += h * vec3(1.0, 0.28, 0.16);
 
-  if (uGrain > 0.0){
-    vec2 gp = floor(px / max(uPixScale, 1.0));
-    float n = hash(gp) - 0.5;
-    float mid = v.g * (1.0 - v.g) * 4.0;
-    v += n * gn * uGrain * 0.16 * pow(max(mid, 0.0), 0.55);
+  if (uGrain > 0.0 && gn > 0.0){
+    float cell = max(uGrainSize / max(uPixScale, 0.001), 1.0);
+    vec2 gp = px / cell;
+    float env = pow(clamp(v.g * (1.0 - v.g) * 4.0, 0.0, 1.0), 0.8);
+    float amp = uGrain * gn * 0.075 * env;
+    if (isMono == 1){
+      v += vec3(grainField(gp, 1u)) * amp;
+    } else {
+      v.r += grainField(gp, 1u) * amp * 0.85;
+      v.g += grainField(gp, 3u) * amp;
+      v.b += grainField(gp, 7u) * amp * 1.25;
+    }
   }
   outC = vec4(v, 1.0);
 }`;
@@ -415,6 +444,7 @@ export default function PipelineLab() {
   const [full, setFull] = useState(false);
   const [ev, setEv] = useState(0);
   const [grain, setGrain] = useState(1);
+  const [grainSize, setGrainSize] = useState(2);
   const [halation, setHalation] = useState(1);
   const [lab, setLab] = useState(false);
   const [stats, setStats] = useState(null);
@@ -582,6 +612,7 @@ export default function PipelineLab() {
       m[1] > 1e-5 ? 0.18 / (m[1] * exposure) : 1,
       m[2] > 1e-5 ? 0.18 / (m[2] * exposure) : 1);
     gl.uniform1f(U("uGrain"), grain);
+    gl.uniform1f(U("uGrainSize"), grainSize);
     gl.uniform1f(U("uHalAmt"), halation);
     gl.uniform2f(U("uSize"), w, h);
     gl.uniform1f(U("uPixScale"), 1 / Math.max(G.srcScale, 1e-6));
@@ -625,7 +656,7 @@ export default function PipelineLab() {
     gl.uniform1i(gl.getUniformLocation(G.pBlit, "uTex"), 0);
     gl.uniform1f(gl.getUniformLocation(G.pBlit, "uDither"), 1);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-  }, [mode, stage, stock, ev, grain, halation, lab]);
+  }, [mode, stage, stock, ev, grain, halation, grainSize, lab]);
 
   useEffect(() => { if (ready && img) { build(); draw(); } }, [ready, img, full, build]);
   useEffect(() => { if (ready && img) draw(); }, [draw, ready, img]);
@@ -786,6 +817,12 @@ export default function PipelineLab() {
         <input id="pl-gr" type="range" min="0" max="2" step="0.01" value={grain}
           onChange={(e) => setGrain(+e.target.value)} />
         <span className="val">{grain.toFixed(2)}</span>
+      </div>
+      <div className="row">
+        <label htmlFor="pl-gs">Grain size</label>
+        <input id="pl-gs" type="range" min="0.5" max="8" step="0.1" value={grainSize}
+          onChange={(e) => setGrainSize(+e.target.value)} />
+        <span className="val">{grainSize.toFixed(1)} px</span>
       </div>
       <div className="row">
         <label htmlFor="pl-ha">Halation</label>
