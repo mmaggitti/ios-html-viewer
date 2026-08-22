@@ -677,9 +677,12 @@
                     permanent URLs. <strong>View</strong> renders a file instantly (straight from the
                     repo, no publish wait). <strong>Open</strong> goes to its permanent URL once
                     "live" — pin from there with <strong>Share → Add to Home Screen</strong>: it's a
-                    plain path URL, nothing for iOS to strip. Anyone with the link can view these
+                    plain path URL, nothing for iOS to strip. <strong>Update</strong> replaces a
+                    hosted file in place — whatever the revised file is called locally, the hosted
+                    name, URL, and your pins stay the same. Anyone with the link can view these
                     files.</small></p>
             <ul id="hostedList" class="saved-list"></ul>
+            <input type="file" id="updateFileInput" style="display:none" aria-hidden="true">
             <p id="hostedEmpty" class="hint"><small>No hosted files yet.</small></p>
             <div id="tokenSetup">
                 <p class="hint"><small>To upload, paste a GitHub <strong>fine-grained personal access
@@ -918,6 +921,7 @@
                 return STORE_DIR + '/' + encodeURIComponent(name) + (isJsxName(name) ? '.html' : '');
             }
 
+            /* returns true when the path already existed (i.e. this was an update) */
             async function putFile(path, contentStr, message) {
                 var sha = null;
                 var g = await ghFetch('/contents/' + encodePath(path) + '?ref=' + PAGES_BRANCH);
@@ -928,6 +932,7 @@
                     method: 'PUT', body: JSON.stringify(body)
                 });
                 if (!r.ok) throw new Error('GitHub API ' + r.status + ': ' + (await r.text()).slice(0, 180));
+                return !!sha;
             }
 
             async function deleteFile(path, message) {
@@ -943,31 +948,36 @@
 
             var publishing = {};
 
-            /* poll the served URL until the Pages rebuild makes it live */
-            function watchPublish(name) {
-                publishing[name] = true;
+            /* Poll the served URL until the Pages rebuild makes it live. For
+               UPDATES the old version already answers 200, so when the
+               expected content is passed the flip happens only once the
+               served text matches the new upload. */
+            function watchPublish(name, expected) {
+                publishing[name] = expected != null ? 'updating' : 'publishing';
                 var tries = 0;
+                var stop = function () { clearInterval(timer); delete publishing[name]; };
                 var timer = setInterval(function () {
                     tries++;
                     fetch(storeViewUrl(name) + '?_=' + tries + '_' + Math.floor(performance.now()), { cache: 'no-store' })
-                        .then(function (r) {
-                            if (r.ok) {
-                                clearInterval(timer);
-                                delete publishing[name];
-                                refreshHostedList();
-                            } else if (tries > 20) { clearInterval(timer); delete publishing[name]; }
-                        }, function () { if (tries > 20) { clearInterval(timer); delete publishing[name]; } });
-                }, 8000);
+                        .then(async function (r) {
+                            var done = r.ok && (expected == null || (await r.text()) === expected);
+                            if (done) { stop(); refreshHostedList(); }
+                            else if (tries > 20) stop();
+                        }, function () { if (tries > 20) stop(); });
+                }, window.__PUBLISH_POLL_MS || 8000);
             }
 
-            async function uploadToStore(file, content) {
+            /* Shared by the main Upload button (name = picked file's name) and
+               per-row Update (name = the STABLE hosted name, whatever the
+               revised file is called locally — pinned URLs must not move). */
+            async function pushToStore(name, content, fromName) {
                 if (!getToken()) {
                     showAlert('Set up the File Store first — paste your GitHub token in the File Store section below.');
                     return;
                 }
                 try {
                     var hostedContent = content;
-                    if (!isJsxName(file.name)) {
+                    if (!isJsxName(name)) {
                         /* hosted HTML pages get the back-to-app chip baked in
                            (raw .jsx sources stay pristine — their companion
                            viewer page carries the chip instead) */
@@ -977,18 +987,26 @@
                             ? hostedContent.slice(0, idx) + snippet + hostedContent.slice(idx)
                             : hostedContent + snippet;
                     }
-                    await putFile(STORE_DIR + '/' + file.name, hostedContent,
-                        'Upload ' + file.name + ' via iOS HTML Viewer');
-                    if (isJsxName(file.name)) {
-                        await putFile(STORE_DIR + '/' + file.name + '.html',
-                            buildJsxShell(content, file.name, '../'),
-                            'Viewer page for ' + file.name);
+                    var expectedServed = hostedContent;
+                    var existed = await putFile(STORE_DIR + '/' + name, hostedContent,
+                        'Upload ' + name + ' via iOS HTML Viewer');
+                    if (isJsxName(name)) {
+                        /* the view URL serves the companion, so THAT is the
+                           content the publish watcher must see */
+                        expectedServed = buildJsxShell(content, name, '../');
+                        await putFile(STORE_DIR + '/' + name + '.html', expectedServed,
+                            'Viewer page for ' + name);
                     }
-                    watchPublish(file.name);
+                    watchPublish(name, existed ? expectedServed : null);
                     refreshHostedList();
-                    showAlert('Uploaded "' + file.name + '" — committed to the repo. View shows it right away; the permanent URL for pinning goes live within about a minute (its row will read "live").');
+                    var fromNote = (fromName && fromName !== name) ? ' (from ' + fromName + ')' : '';
+                    if (existed) {
+                        showAlert('Updated "' + name + '"' + fromNote + ' — committed. Its row reads "live" once the new version is being served (~1 min). Your device may keep showing the old version on the pinned page for a few minutes — pull down to refresh. View always shows the latest.');
+                    } else {
+                        showAlert('Uploaded "' + name + '"' + fromNote + ' — committed to the repo. View shows it right away; the permanent URL for pinning goes live within about a minute (its row will read "live").');
+                    }
                 } catch (e) {
-                    showAlert('Upload failed: ' + (e && e.message || e));
+                    showAlert((fromName ? 'Update' : 'Upload') + ' failed: ' + (e && e.message || e));
                 }
             }
 
@@ -1020,7 +1038,7 @@
                     det.textContent = formatSize(f.size || 0) + ' · ';
                     var status = document.createElement('span');
                     status.className = 'publish-status' + (publishing[f.name] ? '' : ' live');
-                    status.textContent = publishing[f.name] ? 'publishing…' : 'live';
+                    status.textContent = publishing[f.name] ? publishing[f.name] + '…' : 'live';
                     det.appendChild(status);
                     meta.appendChild(nm);
                     meta.appendChild(det);
@@ -1055,6 +1073,18 @@
                         location.assign(storeViewUrl(f.name));
                     });
 
+                    /* Update: replace this hosted file in place. The revised
+                       local file may have ANY name — the hosted name (and any
+                       pinned URL) stays exactly the same. */
+                    var updBtn = document.createElement('button');
+                    updBtn.textContent = 'Update';
+                    updBtn.className = 'ghost';
+                    updBtn.addEventListener('click', function () {
+                        if (!getToken()) { showAlert('Updating needs the File Store token.'); return; }
+                        window.__updateTarget = f.name;
+                        document.getElementById('updateFileInput').click();
+                    });
+
                     var delBtn = document.createElement('button');
                     delBtn.textContent = 'Delete';
                     delBtn.className = 'ghost';
@@ -1072,6 +1102,7 @@
 
                     actions.appendChild(viewBtn);
                     actions.appendChild(openBtn);
+                    actions.appendChild(updBtn);
                     actions.appendChild(delBtn);
                     li.appendChild(meta);
                     li.appendChild(actions);
@@ -1132,7 +1163,28 @@
             });
 
             document.getElementById('uploadStoreButton').addEventListener('click', function () {
-                withSelectedFile(function (file, content) { uploadToStore(file, content); });
+                withSelectedFile(function (file, content) { pushToStore(file.name, content, null); });
+            });
+
+            /* dedicated picker for per-row Update, so the main selection is
+               untouched; the File object survives clearing the input */
+            document.getElementById('updateFileInput').addEventListener('change', function () {
+                var file = this.files[0];
+                var target = window.__updateTarget;
+                window.__updateTarget = null;
+                this.value = '';
+                if (!file || !target) return;
+                if (isJsxName(file.name) !== isJsxName(target)) {
+                    showAlert('Type mismatch: "' + file.name + '" is ' +
+                        (isJsxName(file.name) ? 'a React component' : 'an HTML file') +
+                        ' but "' + target + '" is ' +
+                        (isJsxName(target) ? 'a React component' : 'an HTML file') +
+                        '. Pick a matching file, or upload it as a new file instead.');
+                    return;
+                }
+                var reader = new FileReader();
+                reader.onload = function (e) { pushToStore(target, e.target.result, file.name); };
+                reader.readAsText(file);
             });
 
             /* ---------- pin mode ----------
