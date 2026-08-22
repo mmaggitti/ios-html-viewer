@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>the computer, reviewed — Kernel Panic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* parchment canvas */
+    --parchment:#F2E9D6;
+    --parchment-deep:#E9DCC0;
+    --ink:#3A342B;
+    --faded:#6E6455;
+    --line:rgba(58,52,43,.22);
+    /* pastel chrome — the four accent choices */
+    --blush:#F0C7C3;
+    --butter:#F0DFA6;
+    --sage:#C5D9BC;
+    --powder:#BFD3E6;
+    --link:#56748F;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  html{scroll-behavior:smooth}
+
+  body{
+    font-family:"IBM Plex Serif",Georgia,serif;
+    color:var(--ink);
+    background:radial-gradient(130% 100% at 50% 0%, #F6EEDD 0%, var(--parchment) 55%, var(--parchment-deep) 100%);
+    background-attachment:fixed;
+    line-height:1.65;
+    font-size:1.0625rem;
+  }
+
+  /* faint paper fiber */
+  body::after{
+    content:"";
+    position:fixed;inset:0;
+    pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    mix-blend-mode:multiply;
+  }
+
+  /* four accent choices, as a hairline across the top */
+  .accent-strip{
+    height:5px;
+    background:linear-gradient(to right,
+      var(--blush) 0 25%, var(--butter) 25% 50%,
+      var(--sage) 50% 75%, var(--powder) 75% 100%);
+  }
+
+  main{max-width:44rem;margin:0 auto;padding:3rem 1.25rem 4rem}
+
+  h1{
+    font-family:"Zilla Slab",serif;font-weight:700;
+    font-size:clamp(2.3rem,8vw,3.4rem);
+    line-height:1.05;letter-spacing:-.01em;
+    margin:0 0 .75rem;
+  }
+  .deck{
+    font-size:1.15rem;font-style:italic;color:var(--faded);
+    max-width:34rem;margin-bottom:2.4rem;
+  }
+
+  article > p{margin-bottom:1.15rem}
+  article > p:first-of-type::first-line{font-variant:small-caps;letter-spacing:.02em}
+
+  h2{
+    font-family:"Zilla Slab",serif;font-weight:600;
+    font-size:1.45rem;line-height:1.2;
+    margin:2.6rem 0 1rem;
+    display:inline-block;
+    padding:.05em .35em;border-radius:2px;
+  }
+  /* pastel marker behind section heads, cycling the four accents */
+  article h2:nth-of-type(4n+1){background:linear-gradient(transparent 55%, var(--blush) 55%)}
+  article h2:nth-of-type(4n+2){background:linear-gradient(transparent 55%, var(--sage) 55%)}
+  article h2:nth-of-type(4n+3){background:linear-gradient(transparent 55%, var(--powder) 55%)}
+  article h2:nth-of-type(4n+4){background:linear-gradient(transparent 55%, var(--butter) 55%)}
+  h2 + p{margin-top:.2rem}
+
+  em{font-style:italic}
+  a{color:var(--link);text-decoration-thickness:1px;text-underline-offset:2px}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+
+  .dialogue{margin:0 0 1.15rem 1.25rem;color:var(--ink)}
+  .dialogue p{margin-bottom:.35rem}
+
+  /* ——— the home screen: 2×2 grid of the four words ——— */
+  .home-screen{
+    display:grid;grid-template-columns:1fr 1fr;gap:.7rem;
+    margin:1.4rem 0 1.6rem;
+  }
+  .tile{
+    border:1px solid var(--line);border-radius:8px;
+    padding:.85rem .9rem .8rem;
+    box-shadow:0 1px 0 rgba(58,52,43,.08);
+    transition:transform .15s ease;
+  }
+  .tile:hover{transform:translateY(-2px)}
+  .tile h3{
+    font-family:"Zilla Slab",serif;font-weight:600;font-size:1.2rem;
+    margin-bottom:.25rem;
+  }
+  .tile p{
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;
+    color:var(--ink);opacity:.75;line-height:1.5;
+  }
+  .tile.t-blush{background:linear-gradient(180deg, var(--blush), rgba(240,199,195,.35))}
+  .tile.t-sage{background:linear-gradient(180deg, var(--sage), rgba(197,217,188,.35))}
+  .tile.t-butter{background:linear-gradient(180deg, var(--butter), rgba(240,223,166,.35))}
+  .tile.t-powder{background:linear-gradient(180deg, var(--powder), rgba(191,211,230,.35))}
+  .home-caption{
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--faded);
+    text-align:center;margin:-0.6rem 0 1.6rem;
+  }
+
+  /* ——— signature: the "show the work" window ——— */
+  .os-window{
+    border:1px solid var(--line);border-radius:10px;
+    background:#FAF5E9;
+    box-shadow:0 10px 24px -14px rgba(58,52,43,.4), 0 1px 0 rgba(58,52,43,.06);
+    margin:1.6rem 0 1.8rem;
+    overflow:hidden;
+  }
+  .os-titlebar{
+    display:flex;align-items:center;gap:.5rem;
+    background:linear-gradient(to right, var(--powder), rgba(191,211,230,.4));
+    border-bottom:1px solid var(--line);
+    padding:.5rem .8rem;
+    font-family:"IBM Plex Mono",monospace;font-size:.78rem;font-weight:500;
+  }
+  .os-titlebar .dots{display:flex;gap:.35rem;margin-left:auto}
+  .os-titlebar .dots span{
+    width:.65rem;height:.65rem;border-radius:50%;
+    border:1px solid rgba(58,52,43,.3);
+  }
+  .dots .d1{background:var(--blush)}
+  .dots .d2{background:var(--butter)}
+  .dots .d3{background:var(--sage)}
+
+  .os-log{
+    font-family:"IBM Plex Mono",monospace;font-size:.78rem;line-height:1.9;
+    padding:.9rem 1rem;
+    overflow-x:auto;
+  }
+  .os-log table{border-collapse:collapse;width:100%;min-width:22rem}
+  .os-log th{
+    text-align:left;font-weight:500;font-size:.68rem;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--faded);
+    border-bottom:1px dashed var(--line);padding:0 .5rem .3rem 0;
+  }
+  .os-log td{padding:0 .5rem 0 0;vertical-align:top}
+  .os-log .t{color:var(--faded);white-space:nowrap}
+  .os-log .net{text-align:right;color:var(--faded)}
+  .os-log .sleep td{opacity:.55;font-style:italic}
+
+  /* the folded sheet of paper */
+  .paper-note{
+    background:#FBF6EA;
+    border:1px solid var(--line);
+    border-radius:2px 14px 2px 2px;
+    padding:1rem 1.1rem;
+    margin:1.4rem 0 1.6rem;
+    font-family:"IBM Plex Mono",monospace;font-size:.85rem;line-height:1.7;
+    position:relative;
+    box-shadow:0 2px 0 rgba(58,52,43,.08);
+  }
+  .paper-note::before{
+    content:"everything (excerpt)";
+    display:block;font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--faded);margin-bottom:.4rem;
+  }
+  .paper-note::after{ /* folded corner */
+    content:"";position:absolute;top:0;right:0;
+    border-style:solid;border-width:0 14px 14px 0;
+    border-color:var(--parchment) var(--parchment) var(--sage) transparent;
+  }
+
+  /* lists with pastel square markers */
+  ul.pastel-list{list-style:none;margin:0 0 1.15rem}
+  ul.pastel-list li{
+    position:relative;padding-left:1.35rem;margin-bottom:.65rem;
+  }
+  ul.pastel-list li::before{
+    content:"";position:absolute;left:0;top:.5em;
+    width:.55rem;height:.55rem;border-radius:2px;
+    border:1px solid rgba(58,52,43,.3);
+  }
+  ul.pastel-list li:nth-child(4n+1)::before{background:var(--blush)}
+  ul.pastel-list li:nth-child(4n+2)::before{background:var(--butter)}
+  ul.pastel-list li:nth-child(4n+3)::before{background:var(--sage)}
+  ul.pastel-list li:nth-child(4n+4)::before{background:var(--powder)}
+
+  /* verdict card */
+  .verdict{
+    border:1px solid var(--line);border-radius:10px;
+    background:linear-gradient(180deg, rgba(197,217,188,.35), rgba(250,245,233,.9));
+    padding:1.2rem 1.2rem 1rem;
+    margin:1.4rem 0 1.6rem;
+  }
+  .verdict h3{
+    font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:.72rem;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--faded);
+    margin-bottom:.7rem;
+  }
+  .score{
+    display:inline-block;
+    font-family:"IBM Plex Mono",monospace;font-size:.85rem;
+    border:1px dashed rgba(58,52,43,.4);border-radius:6px;
+    padding:.35rem .7rem;margin-top:.9rem;
+    background:rgba(240,223,166,.4);
+  }
+
+  footer{
+    max-width:44rem;margin:0 auto;padding:1.4rem 1.25rem 3rem;
+    border-top:1px solid var(--line);
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--faded);
+    line-height:1.8;
+  }
+
+  /* gentle entrance */
+  @media (prefers-reduced-motion: no-preference){
+    main{animation:settle .5s ease-out both}
+    @keyframes settle{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .tile,.tile:hover{transition:none;transform:none}
+  }
+
+  @media (max-width:420px){
+    body{font-size:1rem}
+  }
+</style>
+</head>
+<body>
+
+<div class="accent-strip" aria-hidden="true"></div>
+
+<main>
+  <h1>the computer, reviewed</h1>
+  <p class="deck">Our attempt to review the least reviewable machine of 2026.</p>
+
+  <article>
+    <p>My friend Dana showed up to lunch with a new laptop. Matte gray, no logo, hinge like a library door. I asked what it was.</p>
+
+    <div class="dialogue">
+      <p>&ldquo;It&rsquo;s the computer.&rdquo;</p>
+      <p>&ldquo;Which computer?&rdquo;</p>
+      <p>&ldquo;That&rsquo;s the name.&rdquo;</p>
+    </div>
+
+    <p>Try searching <em>the computer review</em>. Enjoy four billion results about every machine built since 1946. The name is either a joke, a filter, or the most confident branding decision of the decade — possibly all three. The fine print on the box attributes the device to <strong>the computer company</strong> of Olympia, Washington, which is equally unsearchable, which I have to assume is the point. They do not advertise. They have never given an interview. Their entire commercial presence is one web page, and I only found <em>that</em> because Dana texted me the link.</p>
+
+    <h2>The store is one page</h2>
+    <p>The page shows four objects: a slab, a tablet, a laptop, a desktop. Six hundred dollars. Any of them. One storage size (512&nbsp;GB), one color (a warm gray they don&rsquo;t bother to name). You tap the shape you want, type an address, pay. No account creation, no trade-in calculator, no protection-plan interstitial, no countdown timer whispering that the deal ends soon. The confirmation email is nine words: &ldquo;thanks. your computer ships tuesday. reply if anything&rsquo;s wrong.&rdquo;</p>
+    <p>I want to be clear about how disorienting this is. I have spent fifteen years covering an industry where buying a phone involves more decisions than buying a car. Here, the entire market exchange took forty seconds and left no impression at all. I&rsquo;ve had more memorable transactions at a parking meter. Three days later a plain cardboard box arrived containing the laptop, a charger, two spare screws, and a single folded sheet of paper titled &ldquo;everything.&rdquo; It is, unnervingly, everything.</p>
+
+    <h2>Hardware you will forget, gratefully</h2>
+    <p>Physically, the computer looks like a background prop from a good science-fiction film — the rectangle on the desk <em>behind</em> the actor. Even bezels. No notch. No camera-bump archipelago. No logo anywhere on the device, which I kept checking, the way you probe a gap where a tooth used to be. The slab (the sheet of paper calls it &ldquo;the small one&rdquo;; the word &ldquo;phone&rdquo; appears nowhere) is a flat glass-and-aluminum object your hand stops noticing within the hour.</p>
+    <p>For the first day this plainness read as boring. By the end of the week it read as the entire rest of the industry clearing its throat. Every other device in my house now looks like it&rsquo;s trying to get my attention. This one looks like it&rsquo;s waiting for me to need it.</p>
+    <p>It comes apart with the included screws. There&rsquo;s a parts page — flat prices, mailed in plain boxes, naturally.</p>
+
+    <h2>Four choices, always</h2>
+    <p>Setup takes ninety seconds: your name, an accent color (four to pick from, obviously), a keyboard layout. Then the home screen, which is four words.</p>
+
+    <div class="home-screen" role="img" aria-label="The computer's home screen: four tiles labeled make, find, talk, and plan">
+      <div class="tile t-blush"><h3>make</h3><p>a document · a sheet · a note</p></div>
+      <div class="tile t-sage"><h3>find</h3><p>files · photos · music · the web</p></div>
+      <div class="tile t-butter"><h3>talk</h3><p>mail · messages · the feed</p></div>
+      <div class="tile t-powder"><h3>plan</h3><p>calendar · tasks · maps</p></div>
+    </div>
+    <p class="home-caption">fig. 1 — the whole operating system, more or less</p>
+
+    <p>That&rsquo;s the visible surface of it. The rule — never more than four options on screen at once — sounds like it should collapse the moment you need anything real. So I went hunting for mail filters, the kind of setting that lives eleven menus deep on my old machine, assuming I&rsquo;d hit the wall. Talk, mail, sort. Three taps, four doors at each step. I tried again with sheet formulas, calendar sharing, per-site permissions in the browser. Everything I looked for was three or four unhurried choices away. Nothing is missing. It&rsquo;s just <em>sorted</em>, by someone who apparently regarded sorting as a moral obligation.</p>
+    <p>Every surface shares one design language: same typeface, same toolbar, same shortcuts. The spreadsheet looks like the word processor&rsquo;s sibling because it is. Learn one and you&rsquo;ve learned all of it. And the buttons do not move. The changelog for update 14, in its entirety: &ldquo;fixed eleven bugs. nothing moved.&rdquo; I read that sentence and felt a decade of redesign-induced tension leave my shoulders.</p>
+
+    <h2>The toggle</h2>
+    <p>Buried one level down in settings — behind your own name, top corner — is a switch labeled &ldquo;show the work.&rdquo; Flip it and a pane slides up listing every operation the machine performs, timestamped, in plain sentences. Tap any line for the raw technical detail; ignore it forever if you&rsquo;d rather.</p>
+
+    <div class="os-window" aria-label="A recreation of the computer's activity log">
+      <div class="os-titlebar">show the work
+        <div class="dots" aria-hidden="true"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+      </div>
+      <div class="os-log">
+        <table>
+          <thead><tr><th>when</th><th>what</th><th class="net">network</th></tr></thead>
+          <tbody>
+            <tr><td class="t">17:03</td><td>saved your draft to disk</td><td class="net">—</td></tr>
+            <tr><td class="t">17:03</td><td>nothing else</td><td class="net">—</td></tr>
+            <tr class="sleep"><td class="t">17:04 – 07:39</td><td>(asleep)</td><td class="net">—</td></tr>
+            <tr><td class="t">07:40</td><td>checked mail at your provider</td><td class="net">1 call</td></tr>
+            <tr><td class="t">07:40</td><td>nothing else</td><td class="net">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p>I left it open overnight, the way you&rsquo;d leave a nanny cam running. In the morning the log reported that the computer had done nothing all night. The network column was a page of dashes. This, it turns out, is also why the battery lasts about three days: there is nothing running behind you. No telemetry heartbeat, no &ldquo;diagnostics,&rdquo; no quiet phone-home dressed up as a service. It is the most boring screen I have ever looked at, and I now judge every device I own against it. Other companies publish privacy whitepapers. This one hands you receipts.</p>
+
+    <h2>The ordinary stuff, done plainly</h2>
+    <p>Mail is mail, and works with whatever provider you already have. The calendar is a calendar. The feed is the one genuine surprise: it&rsquo;s built on open standards, shows the people you chose in the order they posted, and when you reach the bottom it says, in small type, &ldquo;that&rsquo;s everything.&rdquo; The first time, I laughed. The third time, something in my chest unclenched. There is no algorithmic tray of strangers, no counter telling you how the room feels about you, no bottom of the bowl that refills itself.</p>
+
+    <h2>What it won&rsquo;t do</h2>
+    <p>This section exists because the computer will happily disappoint certain people, and the folded sheet of paper says so before I can.</p>
+
+    <div class="paper-note">&ldquo;if your work needs special software, this is the wrong computer. sorry.&rdquo;</div>
+
+    <ul class="pastel-list">
+      <li><strong>No apps.</strong> None. No store, no sideloading. The web is the escape hatch; if your bank&rsquo;s website is bad, that is now your problem.</li>
+      <li><strong>No games.</strong> Nothing is installable, and nothing playable ships in the box.</li>
+      <li><strong>The camera is fine.</strong> Genuinely fine. Not any of the words flagship reviews are built on.</li>
+      <li><strong>Your group chats live elsewhere.</strong> Messages handles SMS, RCS, and email cleanly, but the blue-bubble social physics of your friend group are not a solvable engineering problem.</li>
+      <li><strong>One color.</strong> Take the gray or leave it.</li>
+      <li><strong>Buying one is anticlimactic.</strong> No one talks you into anything, and no one talks you out of it. You will not enjoy the purchase. You will not remember it.</li>
+    </ul>
+
+    <h2>Two weeks later</h2>
+    <p>Here is my professional problem: nothing happened. No setup saga, no day-three bug, no ecosystem drama, no subscription ambush on day thirty. I kept a notes file open for review material and it stayed nearly empty, because the machine kept declining to generate incidents.</p>
+    <p>Then I picked up my old phone to use a parking app, and it was like stepping into a casino. The carpet screaming. The machines chirping. Nineteen notifications, twelve of them from apps advocating for themselves. I paid for parking through the browser on the small one instead, and the log recorded the transaction in two lines, and then the rectangle went back to sitting on the table like furniture.</p>
+
+    <h2>Verdict</h2>
+    <p>House style demands a score. I typed 8.5 and it felt like marketing. I typed 9.1 and it felt worse. Scores are for stories — for launch arcs and comeback narratives and ecosystems with cliffhangers — and this thing has gone out of its way to not be a story. There&rsquo;s no keynote to grade against, no lock-in to weigh, no promise to hold anyone to except the one on the folded paper.</p>
+
+    <div class="verdict">
+      <h3>Specs, for the record</h3>
+      <ul class="pastel-list">
+        <li>$600, any shape, no configurations</li>
+        <li>512&nbsp;GB, one color, roughly three days of battery</li>
+        <li>Screws, not glue; flat-price parts page</li>
+        <li>Quarterly updates; nothing moves</li>
+        <li>Support is an email address; a person answered mine in a day</li>
+      </ul>
+      <span class="score">score: withheld</span>
+    </div>
+
+    <p>I keep forgetting the computer is on my desk, and as far as I can tell, that was the design brief. It is currently the only device on the market that meets it.</p>
+  </article>
+</main>
+
+<footer>
+  <p>There are no affiliate links in this review, because there is nothing to link to except one page, and you can find it the way everyone does: someone you trust shows you theirs.</p>
+  <p>kernel panic · honest reviews of dishonest machines · est. 2019</p>
+</footer>
+
+
+<script>(function(){if(document.getElementById('__ioshtmlviewer_back'))return;var a=document.createElement('a');a.id='__ioshtmlviewer_back';a.href=new URL('../',location.href).href;a.setAttribute('aria-label','Back to iOS HTML Viewer');a.textContent='\u2039';a.style.cssText='position:absolute;left:10px;top:calc(8px + env(safe-area-inset-top,0px));width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font:600 17px/27px -apple-system,Arial,sans-serif;text-align:center;text-decoration:none;z-index:2147483647;opacity:.5';a.addEventListener('touchstart',function(){a.style.opacity='1';},{passive:true});a.addEventListener('mouseenter',function(){a.style.opacity='1';});a.addEventListener('mouseleave',function(){a.style.opacity='.5';});function add(){if(document.body)document.body.appendChild(a);}if(document.body)add();else document.addEventListener('DOMContentLoaded',add);})();</script>
+</body>
+</html>
