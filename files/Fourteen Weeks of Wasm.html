@@ -1,0 +1,1452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Fourteen Weeks of Wasm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F6F1E8; --bg-2:#EEE7DA; --bg-3:#E5DDCC;
+  --ink:#2A2722; --ink-2:#655E53; --line:#D8CEBD;
+  --accent:#4E45A6; --accent-soft:#E6E2F6;
+  --lav:#E4DFF3; --sage:#D6E6DA; --blue:#D8E4ED; --apri:#F3DCC7;
+  --chip-ink:#332F2A; --unv:#8A4B1F;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1F1C18; --bg-2:#282420; --bg-3:#332E27;
+    --ink:#ECE5D8; --ink-2:#A79F91; --line:#413A30;
+    --accent:#B9B1F0; --accent-soft:#332E52;
+    --lav:#3A355B; --sage:#2D4136; --blue:#2D3C4A; --apri:#4C3826;
+    --chip-ink:#ECE5D8; --unv:#E7A56F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1F1C18; --bg-2:#282420; --bg-3:#332E27;
+  --ink:#ECE5D8; --ink-2:#A79F91; --line:#413A30;
+  --accent:#B9B1F0; --accent-soft:#332E52;
+  --lav:#3A355B; --sage:#2D4136; --blue:#2D3C4A; --apri:#4C3826;
+  --chip-ink:#ECE5D8; --unv:#E7A56F;
+  color-scheme: dark;
+}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.58 "IBM Plex Sans","Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font:.86em/1.4 "IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg-2);padding:.08em .32em;border-radius:3px}
+strong{font-weight:600}
+h1,h2,h3,.wk,.glance-h,.spine b,.g .n{font-family:"Caveat","Segoe Print","Bradley Hand",cursive;font-weight:600;text-wrap:balance}
+h2{font-size:2.15rem;line-height:1.1;margin:3.2rem 0 .9rem;letter-spacing:.005em}
+h3{font-size:1.75rem;line-height:1.15;margin:2.6rem 0 .6rem}
+h3.part{padding-top:1.2rem;border-top:2px solid var(--line)}
+h3.part + p em{color:var(--ink-2)}
+h4{font-size:1.12rem;font-weight:600;margin:0;line-height:1.3}
+p,ul,ol,.exit{max-width:78ch}
+p{margin:.55rem 0}
+ul,ol{padding-left:1.25rem;margin:.5rem 0}
+li{margin:.28rem 0}
+li ul,li ol{margin:.3rem 0 .55rem 0}
+li ol{padding-left:1.35rem}
+hr{border:0;border-top:1px solid var(--line);margin:2.4rem 0}
+.wrap{max-width:1120px;margin:0 auto;padding:0 1.25rem 4rem}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 90%,transparent);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav-in{max-width:1120px;margin:0 auto;padding:.6rem 1.25rem;display:flex;gap:1.05rem;flex-wrap:wrap;align-items:center;
+  font:500 .72rem/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase}
+.nav-in a{color:var(--ink-2);text-decoration:none;padding:.2rem 0}
+.nav-in a:hover{color:var(--ink)}
+.prog{margin-left:auto;color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+/* hero */
+.hero{padding:3rem 0 1.6rem;border-bottom:1px solid var(--line)}
+.eyebrow{font:500 .72rem/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+h1{font-size:clamp(2.6rem,6vw,4.2rem);line-height:1;margin:.5rem 0 .6rem}
+.lede{font-size:1.06rem;max-width:66ch;margin:.4rem 0}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.35rem 1.6rem;margin:1.1rem 0 0;padding:0;list-style:none;max-width:900px;
+  font:.8rem/1.5 "IBM Plex Mono",ui-monospace,monospace;color:var(--ink-2)}
+.meta b{color:var(--ink);font-weight:500}
+
+/* spine strip */
+.spine{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.1rem 1.6rem;margin:1.4rem 0 .4rem}
+.spine div{border-top:2px solid var(--line);padding-top:.55rem;font-size:.93rem;line-height:1.5}
+.spine b{display:block;font-size:1.75rem;line-height:1;margin-bottom:.35rem;color:var(--accent)}
+.spine .q{grid-column:1/-1;margin:.2rem 0 0;font-style:italic;color:var(--ink-2);max-width:78ch}
+
+/* glance grid */
+.glance-wrap{margin-top:3rem}
+.glance-h{font-size:2.15rem;margin:0 0 .9rem}
+.glance{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
+.g{display:grid;grid-template-rows:auto auto 1fr;gap:.15rem;padding:.55rem .7rem .6rem;background:var(--bg-2);
+  border-left:3px solid var(--lens,var(--line));border-radius:0 4px 4px 0;color:inherit;text-decoration:none;min-height:96px}
+.g:hover{background:var(--bg-3)}
+.g .n{font-size:1.65rem;line-height:1;color:var(--ink-2)}
+.g .t{font-size:.86rem;line-height:1.25;font-weight:500}
+.g .l{font:.68rem/1.3 "IBM Plex Mono",ui-monospace,monospace;color:var(--ink-2);align-self:end}
+.g.is-done .t{text-decoration:line-through;color:var(--ink-2)}
+.g-sem{--lens:#B7ACE0}.g-eng{--lens:#8FBFA0}.g-plat{--lens:#8FB2CB}.g-all{--lens:#E2AE84}
+:root[data-theme="dark"] .g-sem,:root:not([data-theme="light"]) .g-sem{--lens:#9F93D9}
+.legend{font:.74rem/1.6 "IBM Plex Mono",ui-monospace,monospace;color:var(--ink-2);margin:.7rem 0 0;max-width:none}
+.sw{display:inline-block;width:.7em;height:.7em;border-radius:2px;margin:0 .35em 0 1em;vertical-align:-1px}
+.sw-sem{background:#B7ACE0}.sw-eng{background:#8FBFA0}.sw-plat{background:#8FB2CB}.sw-all{background:#E2AE84}
+.legend .sw:first-child{margin-left:0}
+
+/* chips */
+.tag{display:inline-block;font:500 .68rem/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.02em;
+  padding:.3em .5em .28em;border-radius:.35em;background:var(--lav);color:var(--chip-ink);margin:0 .12em;vertical-align:.12em;white-space:nowrap}
+.tag-phase{background:var(--accent-soft)}
+.tag-wasi{background:var(--blue)}
+.tag-cm{background:var(--sage)}
+.unv{display:inline-block;font:500 .66rem/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--unv);background:var(--apri);padding:.28em .45em;border-radius:.3em;vertical-align:.1em}
+
+/* weeks */
+section.week{border-top:1px solid var(--line);padding:1.5rem 0 1.1rem}
+section.week:first-of-type{border-top:0}
+.week-head{display:grid;grid-template-columns:auto 1fr;gap:.2rem 1rem;align-items:baseline;margin-bottom:.6rem}
+.wk{font-size:2rem;line-height:1;color:var(--ink-2);white-space:nowrap}
+.week-head h4{font-size:1.28rem}
+.week-head .tags{grid-column:2;display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.1rem}
+.done{grid-column:2;justify-self:start;font:.74rem/1 "IBM Plex Mono",ui-monospace,monospace;color:var(--ink-2);
+  display:inline-flex;align-items:center;gap:.4rem;margin-top:.5rem;cursor:pointer;user-select:none}
+.done input{accent-color:var(--accent);margin:0}
+section.week > ul{list-style:none;padding-left:0;max-width:82ch}
+section.week > ul > li{margin:.75rem 0}
+li.k > strong:first-child{display:block;font:500 .7rem/1.4 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-2);margin-bottom:.15rem}
+li.k-lab > strong:first-child,li.k-exit > strong:first-child{text-transform:none;letter-spacing:.02em;font-size:.8rem;color:var(--ink)}
+li.k-lab > strong:first-child::before,li.k-exit > strong:first-child::before,li.k-read > strong:first-child::before,
+li.k-self > strong:first-child::before{content:"";display:inline-block;width:.62em;height:.62em;border-radius:2px;margin-right:.5em;vertical-align:-.02em}
+li.k-lab > strong:first-child::before{background:var(--sage)}
+li.k-exit > strong:first-child::before{background:var(--apri)}
+li.k-read > strong:first-child::before{background:var(--blue)}
+li.k-self > strong:first-child::before{background:var(--lav)}
+li.k-self{color:var(--ink-2)}
+li.k-constraint > strong:first-child{display:inline;font:600 1.05rem/1.4 "IBM Plex Sans",system-ui,sans-serif;text-transform:none;letter-spacing:0;color:var(--ink)}
+li.k-how > strong:first-child{display:inline;font:600 1em/1.5 "IBM Plex Sans",system-ui,sans-serif;text-transform:none;letter-spacing:0;color:var(--ink)}
+p.exit{border-left:3px solid var(--apri);padding:.4rem 0 .4rem .9rem;margin:1.4rem 0;color:var(--ink)}
+p.exit strong{font:500 .7rem/1.4 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;display:block;color:var(--ink-2)}
+
+/* tables */
+.table-wrap{overflow-x:auto;margin:1rem 0 1.4rem;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.88rem;line-height:1.42}
+th,td{text-align:left;vertical-align:top;padding:.5rem .65rem;border-bottom:1px solid var(--line)}
+th{font:500 .68rem/1.4 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);
+  border-bottom:1px solid var(--ink-2);white-space:nowrap}
+td{font-variant-numeric:tabular-nums}
+tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--bg-2) 55%,transparent)}
+td:first-child{font-weight:500}
+#capstone table{font-size:.84rem;min-width:900px}
+#tracker table{min-width:820px}
+#timeline table{min-width:640px}
+#timeline td:first-child,#status td:first-child{white-space:nowrap}
+
+/* figures */
+.fig{margin:1.2rem 0 1.8rem;max-width:1000px}
+.fig svg{max-width:100%;height:auto;display:block;color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:12px}
+.fig svg text{fill:currentColor}
+.fig .yr,.fig .ph,.fig .need,.fig .lane-l,.fig .now-l,.fig .sub{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.fig .yr{font-size:10.5px;fill:var(--ink-2)}
+.fig .lane-l{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;fill:var(--ink-2)}
+.fig .halo{paint-order:stroke;stroke:var(--bg);stroke-width:5px;stroke-linejoin:round}
+.fig .now{stroke:var(--accent)}
+.fig .now-l{font-size:10.5px;fill:var(--accent);letter-spacing:.06em}
+.fig .ph{font-size:12.5px;font-weight:500}
+.fig .sub{font-size:10px;fill:var(--ink-2);letter-spacing:.04em}
+.fig .need{font-size:10.5px;fill:var(--ink-2);font-style:italic}
+.fig .more{fill:var(--ink-2)}
+.fig .sink{stroke:var(--accent);stroke-opacity:1;stroke-width:1.5}
+figcaption{font-size:.86rem;color:var(--ink-2);margin-top:.55rem;max-width:78ch;line-height:1.5}
+
+/* footer */
+.foot{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);font:.76rem/1.6 "IBM Plex Mono",ui-monospace,monospace;color:var(--ink-2)}
+@media (max-width:640px){
+  .week-head{grid-template-columns:1fr}
+  .week-head .tags,.done{grid-column:1}
+  .nav-in{gap:.75rem}
+}
+@media print{.nav{display:none}.g{break-inside:avoid}section.week{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="Sections"><div class="nav-in">
+<a href="#spine">Spine</a><a href="#timeline">Timeline</a><a href="#glance">Weeks</a><a href="#capstone">Capstone</a>
+<a href="#tracker">Tracker</a><a href="#status">Status</a><a href="#watchlist">Watchlist</a><a href="#reading">Reading</a>
+<span class="prog" id="prog">0 / 14 weeks done</span>
+</div></nav>
+<main class="wrap">
+<header class="hero">
+<div class="eyebrow">Graduate-level self-study curriculum · edition 2026-09-04</div>
+<h1>Fourteen Weeks of Wasm</h1>
+<p class="lede">WebAssembly from the binary format to the Component Model, for one learner starting from zero with strong applied programming and no compilers coursework. About ten hours a week. Three lenses — language and semantics, engines and systems, platform and ecosystem — on one spine, with the milestone timeline and the proposal pipeline running underneath.</p>
+<ul class="meta">
+<li><b>14 weeks</b> + optional setup week</li>
+<li><b>~10 h/week</b> · 3.5 read · 5 lab · 1.5 notes</li>
+<li><b>Checked 2026-09-04</b> · unverified items marked</li>
+<li><b>Source of truth</b>: the Obsidian Markdown; this page is the readable view</li>
+</ul>
+</header>
+<h2 id="how">1. How to use this plan</h2>
+<ul>
+<li class="k k-how"><strong>Weekly budget (~10 h):</strong> ~3.5 h reading, ~5 h lab, ~1.5 h notes, flashcards, and the proposal tracker.</li>
+<li class="k k-how"><strong>Reading tiers:</strong> <em>Core</em> is required. <em>Depth</em> is optional and marked. <em>Historical</em> means the piece is old but still the best explanation of a design decision; read it for the reasoning, not the version numbers.</li>
+<li class="k k-how"><strong>Labs</strong> are self-checked builds. Each has an explicit exit check. Do not move on until the exit check passes; the labs stack.</li>
+<li class="k k-how"><strong>Timeline tags</strong> on each week say when the material entered the standard: <span class="tag tag-spec">MVP</span> (1.0), <span class="tag tag-spec">2.0</span>, <span class="tag tag-spec">3.0</span>, <span class="tag tag-phase">P1</span>–<span class="tag tag-phase">P5</span> (proposal phase as of 2026-09-04), <span class="tag tag-wasi">WASI 0.2</span>, <span class="tag tag-wasi">WASI 0.3</span>, <span class="tag tag-cm">CM</span> (Component Model).</li>
+<li class="k k-how"><strong>Proposal tracker (§7):</strong> update it every two weeks. It is the &quot;roadmap&quot; half of this course, and it goes stale fast.</li>
+<li class="k k-how"><strong>Capstone:</strong> choose from the menu in §6 during Week 9. Weeks 10–14 reserve ~5 h/week for it.</li>
+<li class="k k-how"><strong>Lab languages:</strong> Rust produces most modules and components; Python is the host and driver wherever the tooling allows; C appears twice so the classic LLVM/Emscripten/wasi-sdk path is not a mystery. Rationale in §4.</li>
+</ul>
+<hr />
+<h2 id="spine">2. The spine — Wasm as a designed artifact under four constraints</h2>
+<div class="spine" id="spine-strip">
+<div><b>Safe</b>Runs untrusted code. Linear memory is sandboxed by construction; control flow is structured; validation precedes execution.</div>
+<div><b>Fast</b>Near-native and predictable. Single-pass compilation, streaming, cheap bounds checks, and tiers because startup and peak speed pull apart.</div>
+<div><b>Portable</b>No undefined behavior. A deterministic profile since 3.0. Relaxed SIMD trades this away on purpose, which is why it is separate.</div>
+<div><b>Composable</b>Host-agnostic. Imports and exports are the only doors. WASI and the Component Model make them typed and language-neutral.</div>
+<p class="q">Recurring question for every week: what did this feature cost on the other three constraints?</p>
+</div>
+<p>Every feature in this course is taught as a trade-off among these four. When a proposal looks arbitrary, ask which constraint it serves and which one it strains.</p>
+<hr />
+<h2 id="timeline">3. Milestone timeline</h2>
+<figure class="fig">
+<svg viewBox="0 0 1000 280" role="img" aria-label="Two-lane timeline from 2015 to 2027. Core spec lane: announced 2015, MVP ships 2017, 1.0 W3C Recommendation December 2019, 2.0 and SpecTec March 2025, 3.0 September 2025, then a living standard. Platform lane: WASI announced 2019, Bytecode Alliance 2019, Wasmtime 1.0 2022, WASI 0.2 January 2024, WASI 0.3 and the Component Model 1.0 plan June 2026, then Component Model 1.0 and WASI 1.0 with no date. A marker shows today, September 2026.">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+<line class="now" x1="900" y1="44" x2="900" y2="232" stroke-dasharray="3 4" stroke-width="1.5"/>
+<text class="now-l" x="900" y="36" text-anchor="middle">today · Sep 2026</text>
+<text class="lane-l" x="60" y="72">core spec</text>
+<line x1="60" y1="100" x2="972" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+<text class="halo" x="965" y="121" text-anchor="end">living standard</text>
+<circle cx="93" cy="100" r="4.5" fill="currentColor"/><text class="halo" x="93" y="88" text-anchor="middle">announced</text><circle cx="218" cy="100" r="4.5" fill="currentColor"/><text class="halo" x="218" y="120" text-anchor="middle">MVP ships</text><circle cx="415" cy="100" r="4.5" fill="currentColor"/><text class="halo" x="415" y="88" text-anchor="middle">1.0 W3C Rec</text><circle cx="794" cy="100" r="4.5" fill="currentColor"/><text class="halo" x="794" y="120" text-anchor="middle">2.0 · SpecTec</text><circle cx="831" cy="100" r="4.5" fill="currentColor"/><text class="halo" x="831" y="88" text-anchor="middle">3.0</text>
+<text class="lane-l" x="60" y="162">platform · WASI and the Component Model</text>
+<line x1="60" y1="190" x2="900" y2="190" stroke="currentColor" stroke-width="1.5"/>
+<line x1="900" y1="190" x2="972" y2="190" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 5" marker-end="url(#arr)"/>
+<text class="halo" x="965" y="211" text-anchor="end">CM 1.0 → WASI 1.0 · no date</text>
+<circle cx="362" cy="190" r="4.5" fill="currentColor"/><text class="halo" x="362" y="178" text-anchor="middle">WASI announced</text><circle cx="411" cy="190" r="4.5" fill="currentColor"/><text class="halo" x="411" y="210" text-anchor="middle">Bytecode Alliance</text><circle cx="614" cy="190" r="4.5" fill="currentColor"/><text class="halo" x="614" y="178" text-anchor="middle">Wasmtime 1.0</text><circle cx="711" cy="190" r="4.5" fill="currentColor"/><text class="halo" x="711" y="210" text-anchor="middle">WASI 0.2</text><circle cx="884" cy="190" r="4.5" fill="currentColor"/><text class="halo" x="892" y="178" text-anchor="end">WASI 0.3 · CM 1.0 plan</text>
+<line x1="60" y1="240" x2="972" y2="240" stroke="currentColor" stroke-opacity=".6"/>
+<line x1="60" y1="240" x2="60" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="60" y="262" text-anchor="middle">2015</text><line x1="132" y1="240" x2="132" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="132" y="262" text-anchor="middle">2016</text><line x1="204" y1="240" x2="204" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="204" y="262" text-anchor="middle">2017</text><line x1="276" y1="240" x2="276" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="276" y="262" text-anchor="middle">2018</text><line x1="348" y1="240" x2="348" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="348" y="262" text-anchor="middle">2019</text><line x1="420" y1="240" x2="420" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="420" y="262" text-anchor="middle">2020</text><line x1="492" y1="240" x2="492" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="492" y="262" text-anchor="middle">2021</text><line x1="564" y1="240" x2="564" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="564" y="262" text-anchor="middle">2022</text><line x1="636" y1="240" x2="636" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="636" y="262" text-anchor="middle">2023</text><line x1="708" y1="240" x2="708" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="708" y="262" text-anchor="middle">2024</text><line x1="780" y1="240" x2="780" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="780" y="262" text-anchor="middle">2025</text><line x1="852" y1="240" x2="852" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="852" y="262" text-anchor="middle">2026</text><line x1="924" y1="240" x2="924" y2="246" stroke="currentColor" stroke-opacity=".6"/><text class="yr" x="924" y="262" text-anchor="middle">2027</text>
+</svg>
+<figcaption>Two tracks, one dependency. The core spec is now a living standard; nothing after 3.0 is scheduled as a numbered release. The platform track runs on the Component Model, and WASI 1.0 waits on Component Model 1.0, which waits on two native browser implementations.</figcaption>
+</figure>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Milestone</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2013</td>
+<td>asm.js (Mozilla)</td>
+<td>The proof that a typed subset of JS could run near native. Wasm's direct ancestor.</td>
+</tr>
+<tr>
+<td>Jun 2015</td>
+<td>WebAssembly announced by Mozilla, Google, Microsoft, Apple</td>
+<td>Cross-vendor from day one. That is rare and explains the consensus-driven process.</td>
+</tr>
+<tr>
+<td>Mar 2017</td>
+<td>MVP ships in Chrome 57 and Firefox 52; CG declares the MVP consensus</td>
+<td>The binary format freezes. Everything since is additive.</td>
+</tr>
+<tr>
+<td>Jun 2017</td>
+<td>Haas et al., PLDI 2017</td>
+<td>The design paper. Formal semantics shipped with the language, not after.</td>
+</tr>
+<tr>
+<td>Aug 2017</td>
+<td>W3C WebAssembly Working Group formed</td>
+<td>The CG designs; the WG standardizes. Two bodies, five phases.</td>
+</tr>
+<tr>
+<td>Mar 2019</td>
+<td>WASI announced (Mozilla Hacks)</td>
+<td>Wasm leaves the browser. Capability-based system interface.</td>
+</tr>
+<tr>
+<td>Nov 2019</td>
+<td>Bytecode Alliance founded</td>
+<td>The implementer consortium behind Wasmtime, Cranelift, wasm-tools, jco.</td>
+</tr>
+<tr>
+<td>Dec 5, 2019</td>
+<td>Wasm 1.0 becomes a W3C Recommendation</td>
+<td>The only version to reach full Recommendation status.</td>
+</tr>
+<tr>
+<td>Sep 2022</td>
+<td>Wasmtime 1.0</td>
+<td>Production-ready non-browser engine. Monthly release cadence begins.</td>
+</tr>
+<tr>
+<td>Jan 2024</td>
+<td>WASI 0.2.0 (wasip2)</td>
+<td>WASI rebases on the Component Model. Twelve 0.2.x patch releases follow through 2025.</td>
+</tr>
+<tr>
+<td>Dec 17, 2024</td>
+<td>Wasm 2.0 Candidate Recommendation snapshots</td>
+<td>SIMD, bulk memory, multi-value, reference types, non-trapping conversions, sign extension.</td>
+</tr>
+<tr>
+<td>Mar 11, 2025</td>
+<td>CG adopts SpecTec</td>
+<td>The spec text, the Coq definitions, and a machine-readable AST are now generated from one DSL source.</td>
+</tr>
+<tr>
+<td>Mar 20, 2025</td>
+<td>Wasm 2.0 declared complete</td>
+<td></td>
+</tr>
+<tr>
+<td>Sep 17, 2025</td>
+<td><strong>Wasm 3.0 completed</strong></td>
+<td>64-bit memory, multiple memories, GC, typed references, tail calls, exception handling, relaxed SIMD, deterministic profile, custom annotations, JS string builtins, extended const, branch hinting. First release produced with SpecTec.</td>
+</tr>
+<tr>
+<td>Oct 2025</td>
+<td>Stack Switching reaches Phase 3 (Munich CG meeting)</td>
+<td>The biggest post-3.0 core feature enters the implementation phase.</td>
+</tr>
+<tr>
+<td>Dec 1, 2025</td>
+<td>Akamai acquires Fermyon</td>
+<td>Spin/SpinKube stay in CNCF. The edge FaaS story consolidates.</td>
+</tr>
+<tr>
+<td>Jun 8, 2026</td>
+<td>&quot;The Road to Component Model 1.0&quot; published</td>
+<td>Lazy ABI, two native browser implementations required, <code>lower-components</code>, WIT expressivity.</td>
+</tr>
+<tr>
+<td>Jun 11, 2026</td>
+<td><strong>WASI 0.3.0</strong></td>
+<td>Native async: <code>async func</code>, <code>stream&lt;T&gt;</code>, <code>future&lt;T&gt;</code>. <code>wasi:io</code> removed. Wasmtime 46 ships it by default (Jun 22).</td>
+</tr>
+<tr>
+<td>Jun 24, 2026</td>
+<td>JSPI and Web CSP reach Phase 5 (WG)</td>
+<td>JSPI is cross-browser: Chrome 137, Firefox 153, Safari 27 beta.</td>
+</tr>
+<tr>
+<td>Jul 20, 2026</td>
+<td>Wasmtime 47 enables GC and exception handling by default; removes wasi-threads</td>
+<td>The 3.0 feature set is now the default in the main non-browser engine.</td>
+</tr>
+<tr>
+<td>Jul 21, 2026</td>
+<td>WAMR leaves the Bytecode Alliance</td>
+<td>The embedded runtime landscape shifts.</td>
+</tr>
+<tr>
+<td>Aug 4–5, 2026</td>
+<td>CG in-person meeting, Princeton</td>
+<td>Phase 4 votes for Compact Import Section and Wide Arithmetic; Phase 2 for FP16 (notes not yet published — <span class="unv">unverified</span> outcomes, README reflects them).</td>
+</tr>
+<tr>
+<td>Aug 11, 2026</td>
+<td>WASI 0.3.1</td>
+<td>Bi-monthly 0.3.x train; 0.3.2 planned Oct 13, 2026; train runs through Dec 2027.</td>
+</tr>
+<tr>
+<td>Aug 20, 2026</td>
+<td><strong>W3C WG rechartered</strong> (to Aug 27, 2028); Wasmtime 48 LTS</td>
+<td>New deliverables: Code Metadata and Legacy Extensions specs. Component Model listed as contingent on Phase 4.</td>
+</tr>
+<tr>
+<td>Aug 26, 2026</td>
+<td>Safari Technology Preview 251 adds Memory64</td>
+<td>Safari is the last holdout on memory64; not yet in a shipping Safari.</td>
+</tr>
+<tr>
+<td>Sep 1, 2026</td>
+<td>Firefox 155 ships Compact Import Section</td>
+<td></td>
+</tr>
+<tr>
+<td>Sep 3, 2026</td>
+<td>Editor's draft: &quot;WebAssembly 3.0 (2026-09-03)&quot;</td>
+<td>The WG maintains the spec as a living standard in CR. There is no 3.1 or 4.0 draft.</td>
+</tr>
+<tr>
+<td>No date</td>
+<td>Component Model 1.0 → WASI 1.0</td>
+<td>WASI 1.0 is gated on CM 1.0. CM 1.0 is gated on two native browser implementations.</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="week-0">4. Week 0 — Toolchain (optional, ~6 h; ~12 h if you also need Rust basics)</h2>
+<p><strong>Why Rust and not Python everywhere.</strong> Python cannot produce a core Wasm module from ordinary Python code. It can host Wasm (wasmtime-py) and it can be packaged <em>as</em> a component (componentize-py bundles a CPython build). Rust is the reference toolchain for the Component Model: <code>wasm32-wasip2</code> is a Tier 2 target, <code>wit-bindgen</code> and <code>wasm-tools</code> are Rust-first, and most primary documentation assumes it. The labs need only basic Rust: functions, structs, <code>Option</code>/<code>Result</code>, <code>cargo</code>, crates. Budget 6–8 h of &quot;Rust by Example&quot; if you have never written Rust.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Version (2026-09-04)</th>
+<th>Role in this course</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rust toolchain + <code>wasm32-wasip2</code> (Tier 2), <code>wasm32-wasip1</code>, <code>wasm32-unknown-unknown</code></td>
+<td>stable; <code>wasm32-wasip3</code> is Tier 3</td>
+<td>Produce modules and components. Use plain <code>wasm32-wasip2</code>; <code>cargo-component</code> is experimental and its own README now recommends the plain target.</td>
+</tr>
+<tr>
+<td>Wasmtime</td>
+<td>48.0.1 (Aug 24, 2026; 48.0 is an LTS line, released Aug 20)</td>
+<td>Primary non-browser engine. New major on the 20th of every month; every 12th is LTS. Compilers: Cranelift (optimizing), Winch (baseline), Pulley (portable interpreter, Tier 2).</td>
+</tr>
+<tr>
+<td>wasm-tools</td>
+<td>1.258.0</td>
+<td>Print, parse, validate, component-new, wit. The Swiss-army knife.</td>
+</tr>
+<tr>
+<td>wabt (<code>wat2wasm</code>, <code>wasm-objdump</code>, <code>wasm-interp</code>)</td>
+<td>1.0.41</td>
+<td>Hand-written WAT and binary inspection. Still maintained.</td>
+</tr>
+<tr>
+<td>Binaryen (<code>wasm-opt</code>)</td>
+<td>131</td>
+<td>Optimizer. Also the reference for stack-switching lowering (since 129).</td>
+</tr>
+<tr>
+<td>wit-bindgen</td>
+<td>0.60.0</td>
+<td>Language bindings from WIT.</td>
+</tr>
+<tr>
+<td>jco</td>
+<td>1.25.2</td>
+<td>Run components in Node and the browser; JS componentization.</td>
+</tr>
+<tr>
+<td>wac / wkg</td>
+<td>0.10.1 / 0.16.1</td>
+<td>Compose components; fetch WIT packages from registries.</td>
+</tr>
+<tr>
+<td>Python 3.12+ with <code>wasmtime</code> (wasmtime-py)</td>
+<td>48.0.0</td>
+<td>Python host for modules and components. Exposes WASI 0.3 types (<code>StreamType</code>, <code>FutureType</code>).</td>
+</tr>
+<tr>
+<td>componentize-py</td>
+<td>0.25.0</td>
+<td>Python → component (WASI 0.2 default; 0.3 partial).</td>
+</tr>
+<tr>
+<td>wasi-sdk (clang)</td>
+<td>33 (wasip3 target since 31)</td>
+<td>C path.</td>
+</tr>
+<tr>
+<td>Emscripten</td>
+<td>6.0.2</td>
+<td>C/C++ → browser path. <code>-m64</code> for memory64; JSPI API.</td>
+</tr>
+<tr>
+<td>Node.js 24 LTS, Chrome, Firefox, Safari (if on macOS)</td>
+<td>current</td>
+<td>Browser labs. Safari lags on memory64 and multi-memory; that lag is itself course content.</td>
+</tr>
+<tr>
+<td>Wizard engine (Ben Titzer, Virgil)</td>
+<td>main</td>
+<td>Teaching/research engine. Supports 3.0 features plus stack switching. Optional but valuable in Weeks 5 and 13.</td>
+</tr>
+<tr>
+<td>WebAssembly spec testsuite</td>
+<td>weekly mirror</td>
+<td><code>.wast</code> files for Weeks 3 and the interpreter capstone.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Setup exit check:</strong> <code>wasmtime --version</code>, <code>wasm-tools --version</code>, <code>python -c &quot;import wasmtime&quot;</code>, and <code>jco --version</code> all succeed; a hello-world Rust <code>wasm32-wasip2</code> binary runs under <code>wasmtime run</code>.</p>
+<hr />
+<div class="glance-wrap" id="glance"><h2 class="glance-h">The fourteen weeks at a glance</h2><div class="glance"><a class="g g-sem" href="#week-1" data-week="1"><span class="n">1</span><span class="t">What Wasm is and why</span><span class="l">one module, three hosts</span></a><a class="g g-sem" href="#week-2" data-week="2"><span class="n">2</span><span class="t">Binary and text format</span><span class="l">binary parser in Python</span></a><a class="g g-sem" href="#week-3" data-week="3"><span class="n">3</span><span class="t">Validation and semantics</span><span class="l">validator + interpreter</span></a><a class="g g-sem" href="#week-4" data-week="4"><span class="n">4</span><span class="t">Memory and the sandbox</span><span class="l">break things inside the box</span></a><a class="g g-eng" href="#week-5" data-week="5"><span class="n">5</span><span class="t">Engines and tiers</span><span class="l">one binary, five engines</span></a><a class="g g-eng" href="#week-6" data-week="6"><span class="n">6</span><span class="t">SIMD and performance</span><span class="l">Sobel in SIMD</span></a><a class="g g-eng" href="#week-7" data-week="7"><span class="n">7</span><span class="t">Threads and memory model</span><span class="l">parallel Sobel</span></a><a class="g g-eng" href="#week-8" data-week="8"><span class="n">8</span><span class="t">GC, exceptions, tail calls</span><span class="l">GC/EH by hand, by toolchain</span></a><a class="g g-plat" href="#week-9" data-week="9"><span class="n">9</span><span class="t">JS embedding and JSPI</span><span class="l">ship it · choose capstone</span></a><a class="g g-plat" href="#week-10" data-week="10"><span class="n">10</span><span class="t">WASI 0.1 → 0.3</span><span class="l">one service, two WASI versions</span></a><a class="g g-plat" href="#week-11" data-week="11"><span class="n">11</span><span class="t">Component Model</span><span class="l">two-language composition</span></a><a class="g g-plat" href="#week-12" data-week="12"><span class="n">12</span><span class="t">Beyond the browser, ML</span><span class="l">a vision model, three ways</span></a><a class="g g-all" href="#week-13" data-week="13"><span class="n">13</span><span class="t">Standards process, the queue</span><span class="l">run the future, brief the present</span></a><a class="g g-all" href="#week-14" data-week="14"><span class="n">14</span><span class="t">Research frontier, capstone</span><span class="l">capstone + retrospective</span></a></div><p class="legend"><span class="sw sw-sem"></span>language and semantics <span class="sw sw-eng"></span>engines and systems <span class="sw sw-plat"></span>platform and ecosystem <span class="sw sw-all"></span>all three</p></div><h2 id="weeks">5. Week-by-week</h2>
+<h3 id="part-i-foundations-weeks-1-4" class="part part-sem">Part I — Foundations (Weeks 1–4)</h3>
+<p><em>Lens: language and semantics, with the sandbox as the first systems idea.</em></p>
+<section class="week" id="week-1"><header class="week-head"><span class="wk">Week 1</span><h4>What Wasm is and why it exists</h4><div class="tags"><span class="tag tag-spec">MVP</span><span class="tag tag-spec">3.0</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> explain, in your own words, what a <code>.wasm</code> file is, what a module and an instance are, and where Wasm runs. Run the same module in three hosts.</li>
+<li class="k k-concepts"><strong>Concepts:</strong> the four constraints (§2); asm.js → Wasm; the stack machine; modules, instances, imports, exports; linear memory; the host boundary; browser vs Wasmtime vs edge; what Wasm is <em>not</em> (not a language, not a VM in the JVM sense, not fast by magic).</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>Andy Wingo, &quot;WebAssembly: Yes, but for What?&quot;, ACM Queue 23(3), 2025. Where Wasm actually wins today. Read first; it sets expectations.</li>
+<li>MDN, &quot;WebAssembly concepts&quot; and &quot;Understanding WebAssembly text format&quot;. Maintained (last updated Jul 2026).</li>
+<li>webassembly.org, &quot;Wasm 3.0 Completed&quot; (Sep 17, 2025). The current feature set in one page.</li>
+<li>Web Almanac 2025, WebAssembly chapter (Jan 2026). Wasm is on 0.35% of desktop sites; .NET/Blazor is the top source (41.7%), Emscripten second (10.1%). Read for calibration.</li>
+</ul>
+</li>
+<li class="k k-hist"><strong>Historical:</strong> Lin Clark, &quot;A cartoon intro to WebAssembly&quot; (Mozilla Hacks, 2017, 6 parts). The best explanation of the stack machine and why compilation is fast. Ignore the 2017 status claims.</li>
+<li class="k k-lab"><strong>Lab 1 — One module, three hosts (~5 h):</strong>
+<ol>
+<li>Write <code>add(i32, i32) -&gt; i32</code> and <code>fact(i32) -&gt; i32</code> by hand in WAT. Assemble with <code>wat2wasm</code>. Disassemble with <code>wasm-objdump -x</code> and <code>wasm-tools print</code>.</li>
+<li>Run both in Wasmtime CLI (<code>wasmtime run --invoke</code>), from Python (<code>wasmtime</code> package), and in a browser page (<code>WebAssembly.instantiateStreaming</code>).</li>
+<li>Compile the same two functions from Rust (<code>wasm32-unknown-unknown</code>) and from C (<code>wasi-sdk</code>). Compare binary sizes and the exported names.</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> you can read the WAT for <code>fact</code> and point to the loop, the branch, and the locals without looking anything up.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> What is the difference between a module and an instance? Why does structured control flow matter for the <em>safe</em> constraint? Name two things Wasm cannot do without a host import.</li>
+</ul>
+</section>
+<section class="week" id="week-2"><header class="week-head"><span class="wk">Week 2</span><h4>Binary format, text format, and structured control flow</h4><div class="tags"><span class="tag tag-spec">MVP</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> parse a real <code>.wasm</code> binary with your own code and explain every section.</li>
+<li class="k k-concepts"><strong>Concepts:</strong> sections (type, import, function, table, memory, global, export, start, element, code, data, custom); LEB128; value types; function bodies; <code>block</code>/<code>loop</code>/<code>if</code>; <code>br</code>/<code>br_if</code>/<code>br_table</code> as labeled exits, not gotos; <code>call</code>/<code>call_indirect</code> and tables; loads/stores with alignment hints; traps; the <code>name</code> custom section.</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>Dubroy &amp; Guerra, <em>WebAssembly from the Ground Up</em> (wasmgroundup.com; $19 as of Sep 2026). Chapters 1–8. You build a compiler that <em>emits</em> Wasm, which is the fastest way to learn the binary format.</li>
+<li>Haas et al., &quot;Bringing the Web up to Speed with WebAssembly&quot;, PLDI 2017, §1–2 only. The design rationale for structured control flow and the stack machine.</li>
+<li>Spec, &quot;Structure&quot; and &quot;Binary Format&quot; chapters. Skim; use as reference while parsing.</li>
+</ul>
+</li>
+<li class="k k-depth"><strong>Depth:</strong> Dan Gohman's <em>WebAssembly Reference Manual</em> (MVP-era, stale but readable).</li>
+<li class="k k-lab"><strong>Lab 2 — A binary parser in Python (~5 h):</strong>
+<ol>
+<li>Write a parser that reads a <code>.wasm</code> file, decodes LEB128, walks the sections, and prints types, imports, exports, and each function's instruction list with nesting depth.</li>
+<li>Test it on your Week 1 binaries and on a clang-produced C binary. Cross-check against <code>wasm-tools print</code>.</li>
+<li>Add a <code>--dot</code> flag that draws the control-flow nesting of one function (blocks as boxes, branches as labeled edges).</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> the parser handles every MVP section in a wasi-sdk hello-world without error, and your export list matches <code>wasm-objdump -x</code>.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> Why can <code>br</code> only target enclosing labels? What does <code>call_indirect</code> check at run time, and which constraint does that serve? What is the alignment immediate on a load actually used for?</li>
+</ul>
+</section>
+<section class="week" id="week-3"><header class="week-head"><span class="wk">Week 3</span><h4>Validation as a type system; execution semantics</h4><div class="tags"><span class="tag tag-spec">MVP</span><span class="tag tag-spec">3.0</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> turn the parser into a validator and an interpreter for a core subset, and pass official spec tests for that subset.</li>
+<li class="k k-concepts"><strong>Concepts:</strong> operand-stack typing; validation rules per instruction; <code>unreachable</code> and stack polymorphism; small-step reduction; the store, frames, and labels; traps as termination; determinism and the 3.0 deterministic profile; why the spec has both a formal semantics and a reference interpreter; SpecTec (one DSL source generates the prose, the LaTeX, the Coq definitions, and the AST).</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>Haas et al., PLDI 2017, §3–4 (validation and execution), read alongside the spec's &quot;Validation&quot; and &quot;Execution&quot; chapters for the same instructions. Take the rules for <code>i32.add</code>, <code>block</code>, <code>br_if</code>, and <code>call</code> and work them by hand.</li>
+<li>webassembly.org, &quot;SpecTec has been adopted&quot; (Mar 27, 2025), and Youn et al., &quot;Bringing the WebAssembly Standard up to Speed with SpecTec&quot;, PLDI 2024, §1–2.</li>
+</ul>
+</li>
+<li class="k k-depth"><strong>Depth:</strong> Conrad Watt, &quot;Mechanising and Verifying the WebAssembly Specification&quot;, CPP 2018 (§1–3: what mechanization found). Watt et al., &quot;Two Mechanisations of WebAssembly 1.0&quot;, FM 2021 (skim).</li>
+<li class="k k-lab"><strong>Lab 3 — Validator + interpreter for a core subset (~6 h):</strong>
+<ol>
+<li>Subset: <code>i32</code>/<code>i64</code> arithmetic and comparisons, <code>local.*</code>, <code>global.*</code>, <code>block</code>/<code>loop</code>/<code>if</code>/<code>br*</code>, <code>call</code>, <code>return</code>, <code>memory.size</code>/<code>grow</code>, <code>i32.load</code>/<code>store</code>.</li>
+<li>Implement validation (type-stack per control frame) before execution. Reject bad modules with the spec's error names.</li>
+<li>Convert spec tests with <code>wasm-tools json-from-wast</code> and run <code>i32.wast</code>, <code>block.wast</code>, <code>loop.wast</code>, <code>br_if.wast</code>, <code>call.wast</code>, <code>memory_grow.wast</code> against your interpreter.</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> all assertions pass for those six files. Keep this code; it is the seed of Capstone B.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> What does the validator know that the interpreter can then skip checking? Why is <code>unreachable</code> typed the way it is? What does SpecTec change about how a proposal's spec text is written?</li>
+</ul>
+</section>
+<section class="week" id="week-4"><header class="week-head"><span class="wk">Week 4</span><h4>Memory, safety, and the sandbox</h4><div class="tags"><span class="tag tag-spec">MVP</span><span class="tag tag-spec">3.0</span><span class="tag tag-phase">P3</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> state precisely what Wasm sandboxing guarantees and what it does not, and measure one cost of it.</li>
+<li class="k k-concepts"><strong>Concepts:</strong> linear memory and bounds checks; guard pages vs explicit checks; 32-bit vs 64-bit address space (memory64, 3.0; Safari not yet shipping); multiple memories (3.0); custom page sizes (Phase 3); control-flow integrity through typed <code>call_indirect</code>; the <em>binary security</em> gap (no ASLR, no stack canaries, no page permissions inside linear memory); Spectre and SFI; verified SFI (VeriWasm); RLBox in Firefox as sandboxing in production; performance vs native.</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>Lehmann, Kinder, Pradel, &quot;Everything Old is New Again: Binary Security of WebAssembly&quot;, USENIX Security 2020. The essential corrective to &quot;Wasm is memory safe&quot;.</li>
+<li>Jangda, Powers, Berger, Guha, &quot;Not So Fast: Analyzing the Performance of WebAssembly vs. Native Code&quot;, USENIX ATC 2019. Read §1, §4–5, then the 2021 IMC follow-up abstract (Yan et al.).</li>
+<li>Narayan et al., &quot;Retrofitting Fine Grain Isolation in the Firefox Renderer&quot;, USENIX Security 2020, §1–3 (RLBox).</li>
+</ul>
+</li>
+<li class="k k-depth"><strong>Depth:</strong> Johnson et al., &quot;Доверяй, но проверяй: SFI safety for native-compiled Wasm&quot; (VeriWasm), NDSS 2021. Narayan et al., &quot;Swivel&quot;, USENIX Security 2021 (Spectre). Narayan et al., &quot;Segue &amp; ColorGuard&quot;, ASPLOS 2025 (near-zero-cost SFI on modern CPUs). Michael et al., &quot;MSWasm&quot;, POPL 2023 (memory safety <em>inside</em> linear memory via handles).</li>
+<li class="k k-lab"><strong>Lab 4 — Break things inside the box (~5 h):</strong>
+<ol>
+<li>Write a C program with a stack buffer overflow and a use-after-free. Compile with wasi-sdk. Show what corrupts (other data in linear memory) and what does not (the host, the call stack's return addresses, the engine).</li>
+<li>Compile the same program with <code>-m64</code>-style memory64 (Emscripten <code>-m64</code> or Rust <code>wasm64-unknown-unknown</code>, Tier 3). Note the size and the toolchain friction.</li>
+<li>In Wasmtime, run a load-heavy kernel with guard pages enabled vs disabled (<code>-O memory-guard-size=0</code> vs the default; older releases used <code>static-memory-guard-size</code>) and record the difference. Explicit bounds checks replace the guard pages when the guard is zero.</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> a one-page note: three properties the sandbox guarantees, three it does not, and one measured number.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> Why can a Wasm program have an exploitable buffer overflow yet never escape the sandbox? What does memory64 cost on the <em>fast</em> constraint? Why does the deterministic profile exclude relaxed SIMD?</li>
+</ul>
+</section>
+<p class="exit"><strong>Part I exit criteria:</strong> your parser + validator + interpreter pass the six spec files; you can explain module/instance/store/frame; you can write the sandbox guarantee and its limits from memory.</p>
+<h3 id="part-ii-engines-and-systems-weeks-5-8" class="part part-eng">Part II — Engines and systems (Weeks 5–8)</h3>
+<p><em>Lens: engines. How the four constraints are paid for at run time.</em></p>
+<section class="week" id="week-5"><header class="week-head"><span class="wk">Week 5</span><h4>Engines and compilation tiers</h4><div class="tags"><span class="tag tag-spec">MVP</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> explain why every serious engine has more than one execution tier, and measure the trade-off yourself.</li>
+<li class="k k-concepts"><strong>Concepts:</strong> interpreter vs baseline (single-pass) vs optimizing compiler; startup vs peak; streaming and lazy compilation; dynamic tiering; code caching; AOT vs JIT outside the browser; pre-initialization (Wizer) and partial evaluation (weval).
+<ul>
+<li>V8: DrumBrake (interpreter), Liftoff (baseline), Turboshaft (optimizing; replaced TurboFan for Wasm in 2025).</li>
+<li>SpiderMonkey: Rabaldr (baseline), Baldr/Ion (optimizing).</li>
+<li>JavaScriptCore: IPInt (in-place interpreter; Safari 26.0 runs Wasm here first), BBQ (baseline JIT), OMG (optimizing JIT).</li>
+<li>Wasmtime: Cranelift (optimizing; ISLE instruction selection, regalloc2, ægraphs), Winch (baseline), Pulley (portable interpreter).</li>
+<li>Wizard: simple interpreter, fast in-place interpreter, single-pass compiler — built for teaching and research.</li>
+<li>WAMR: classic/fast interpreters, LLVM AOT, JIT. Wasmer: singlepass / Cranelift / LLVM backends.</li>
+</ul>
+</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>Ben Titzer, &quot;A Fast In-Place Interpreter for WebAssembly&quot;, OOPSLA 2022. Why Wasm is unusually hard to interpret fast, and the fix.</li>
+<li>V8, &quot;WebAssembly compilation pipeline&quot; and <code>docs/wasm/architecture.md</code>; V8 blog, &quot;Leaving the Sea of Nodes&quot; (Mar 2025).</li>
+<li>Wasmtime docs: &quot;Cranelift overview&quot;, &quot;Winch&quot;, and the &quot;Wasm proposals&quot; support matrix.</li>
+<li>Chris Fallin's blog: &quot;Cranelift, Part 3: Correctness in Register Allocation&quot;, the ægraphs post, and &quot;regalloc2&quot;. No peer-reviewed design paper exists for regalloc2 or ISLE; the blog is the primary source.</li>
+</ul>
+</li>
+<li class="k k-depth"><strong>Depth:</strong> Fallin &amp; Bernstein, &quot;Partial Evaluation, Whole-Program Compilation&quot; (weval), PLDI 2025. VanHattum et al., &quot;Lightweight, Modular Verification for WebAssembly-to-Native Instruction Selection&quot; (Crocus), ASPLOS 2024. Zhang et al., &quot;Research on WebAssembly Runtimes: A Survey&quot;, TOSEM 2025 (map of the field).</li>
+<li class="k k-lab"><strong>Lab 5 — One binary, five engines (~5 h):</strong>
+<ol>
+<li>Pick three kernels from PolyBench/C-wasm (or Sightglass) plus your Week 4 load-heavy kernel.</li>
+<li>Measure compile time and run time in: Wasmtime (Cranelift), Wasmtime (Winch, <code>-C compiler=winch</code>), Wasmtime (Pulley), Wasmer (singlepass and Cranelift), WAMR (interpreter and AOT), and Chrome (Liftoff-only via <code>--no-wasm-tier-up</code> vs default).</li>
+<li>Profile one kernel with <code>wasmtime --profile=guest</code> and open it in the Firefox Profiler.</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> a table with 4 kernels × ≥6 configurations, and a paragraph explaining one surprising row.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> Why does a baseline compiler exist if an optimizing one is available? What does streaming compilation require of the binary format? What is the cost of a JIT that the browser pays and Wasmtime does not?</li>
+</ul>
+</section>
+<section class="week" id="week-6"><header class="week-head"><span class="wk">Week 6</span><h4>SIMD, numerics, and performance engineering</h4><div class="tags"><span class="tag tag-spec">2.0</span><span class="tag tag-spec">3.0</span><span class="tag tag-phase">P2</span><span class="tag tag-phase">P4</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> vectorize an image kernel, measure it, and explain what &quot;relaxed&quot; buys and costs.</li>
+<li class="k k-concepts"><strong>Concepts:</strong> fixed-width 128-bit SIMD (2.0); relaxed SIMD (3.0) and its permitted nondeterminism (FMA, lane select, NaN handling); FP16 (Phase 2; failed Phase 2 in 2024, re-polled Aug 2026); wide arithmetic (Phase 4; <code>i64.add128</code>, <code>i64.mul_wide_*</code>); autovectorization vs intrinsics; <code>wasm-opt</code> levels; realistic benchmarking (Wasm-R3).</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>Spec, &quot;Vector Instructions&quot; (skim the shape, not every op). Relaxed SIMD proposal Overview.md (the nondeterminism table).</li>
+<li>Baek et al., &quot;Wasm-R3: Record-Reduce-Replay for Realistic and Standalone WebAssembly Benchmarks&quot;, OOPSLA 2024. Why microbenchmarks mislead.</li>
+<li>Wide Arithmetic proposal Overview.md. A small, current example of a Phase 4 feature.</li>
+</ul>
+</li>
+<li class="k k-depth"><strong>Depth:</strong> Yan et al., &quot;Understanding the Performance of WebAssembly Applications&quot;, IMC 2021. Go 1.27 release notes (<code>GOEXPERIMENT=simd</code>, 128-bit Wasm SIMD).</li>
+<li class="k k-lab"><strong>Lab 6 — Sobel/convolution in SIMD (~5 h):</strong>
+<ol>
+<li>Implement a 3×3 convolution over a grayscale image in Rust (<code>core::arch::wasm32</code> intrinsics) or C (<code>wasm_simd128.h</code>). Scalar, SIMD, relaxed SIMD (<code>+relaxed-simd</code>).</li>
+<li>Run in Wasmtime and Chrome. Add <code>wasm-opt -O3</code> and record the delta.</li>
+<li>Check outputs bit-for-bit across scalar/SIMD/relaxed and across engines. Note any difference and trace it to a relaxed op.</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> ≥2× speedup SIMD vs scalar, a bit-exactness table, and a sentence on when you would refuse to use relaxed SIMD.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> Which constraint does relaxed SIMD trade away, and how does the deterministic profile respond? Why is FP16 controversial enough to fail a phase vote? What does wide arithmetic accelerate?</li>
+</ul>
+</section>
+<section class="week" id="week-7"><header class="week-head"><span class="wk">Week 7</span><h4>Threads, atomics, and the memory model</h4><div class="tags"><span class="tag tag-phase">P4</span><span class="tag tag-phase">P1</span><span class="tag tag-phase">P2</span><span class="tag tag-cm">CM</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> run a parallel kernel in the browser, and explain why threads outside the browser are still unsettled in 2026.</li>
+<li class="k k-concepts"><strong>Concepts:</strong> shared linear memory and atomics (Threads proposal, Phase 4 since Oct 2023; shipped in browsers since 2019–2021); <code>memory.atomic.wait</code>/<code>notify</code>; Web Workers, <code>SharedArrayBuffer</code>, COOP/COEP and <code>crossOriginIsolated</code>; the Wasm memory model (&quot;Weakening WebAssembly&quot;); why instances, tables, GC objects, and JS glue make &quot;just add threads&quot; hard; wasi-threads (deprecated; removed in Wasmtime 47); Shared-Everything Threads (Phase 1: <code>shared</code> annotations on GC types, tables, globals, thread-local globals); Acquire-Release Atomics (Phase 2, split out in May 2026); Component Model cooperative threads (implemented at the CM level; shipping in a WASI 0.3.x follow-up).</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>Conrad Watt, &quot;Concurrency in WebAssembly&quot;, ACM Queue 23(3), 2025. The current state and the open problems, by the person driving them.</li>
+<li>Threads proposal Overview.md; Shared-Everything Threads Overview.md (§ motivation and design).</li>
+<li>Watt, Rossberg, Pichon-Pharabod, &quot;Weakening WebAssembly&quot;, OOPSLA 2019, §1–2 only.</li>
+</ul>
+</li>
+<li class="k k-depth"><strong>Depth:</strong> the full &quot;Weakening WebAssembly&quot; formal model. CG meeting notes for May 19, 2026 (the acquire-release split) and Oct 28–29, 2025.</li>
+<li class="k k-lab"><strong>Lab 7 — Parallel Sobel (~5 h):</strong>
+<ol>
+<li>Port the Week 6 kernel to a thread pool in the browser. Easiest path: C with Emscripten <code>-pthread</code>. Rust path: <code>wasm-bindgen-rayon</code> (requires nightly <code>-Zbuild-std</code> with <code>+atomics,+bulk-memory</code>; note the friction).</li>
+<li>Serve with COOP/COEP headers. Measure scaling at 1, 2, 4, 8 workers.</li>
+<li>Try the same module under Wasmtime with <code>-W threads</code>. Observe what is and is not available for spawning threads now that wasi-threads is gone. Write down the 2026 options (host-driven, CM cooperative threads, or wait for Shared-Everything).</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> a scaling plot and a half-page &quot;state of threads outside the browser, Sept 2026&quot;.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> Why does the browser require cross-origin isolation for shared memory? What is a <code>shared</code> GC struct and why does it need a new proposal? What is the difference between Component Model cooperative threads and core Wasm threads?</li>
+</ul>
+</section>
+<section class="week" id="week-8"><header class="week-head"><span class="wk">Week 8</span><h4>Managed languages on Wasm: GC, exceptions, tail calls, typed references</h4><div class="tags"><span class="tag tag-spec">3.0</span><span class="tag tag-phase">P3</span><span class="tag tag-phase">P1</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> read and hand-write GC and exception-handling code, and explain what changed for Kotlin, Dart, Java, and Scheme toolchains.</li>
+<li class="k k-concepts"><strong>Concepts:</strong> WasmGC (struct and array types, recursive type groups, subtyping, <code>i31ref</code>, casts, the <code>any</code>/<code>eq</code>/<code>func</code>/<code>extern</code> hierarchies); typed function references; tail calls (<code>return_call</code>); exception handling (<code>try_table</code>, <code>exnref</code>; the legacy EH instructions now live in the Legacy Extensions spec); JS string builtins (<code>wasm:js-string</code>); Custom Descriptors &amp; JS Interop (Phase 3, Jan 2026: JS prototypes for Wasm GC objects); Reference-Typed Strings (Phase 1; contested); how engine GCs integrate with the host GC.
+<ul>
+<li>Toolchains in Sept 2026: Kotlin/Wasm (Beta; 2.4.0 Aug 2026 has an experimental Component Model target), Dart/Flutter (<code>--wasm</code>, WasmGC with JS fallback), GraalVM 25.1 Web Image (experimental Native Image → WasmGC), TeaVM 0.15 (WasmGC, <code>try_table</code>), CheerpJ 4.3 (JVM in Wasm, WasmGC planned), Scheme (Hoot), OCaml (<code>wasm_of_ocaml</code>), Scala.js Wasm backend.</li>
+</ul>
+</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>GC proposal <code>MVP.md</code> (the type system section) and the Exception Handling proposal <code>Exceptions.md</code>.</li>
+<li>web.dev case study, &quot;Google Sheets ports its calculation worker from JavaScript to WasmGC&quot; (≈2× JS).</li>
+<li>Custom Descriptors &amp; JS Interop proposal Overview.md. Read this as &quot;the next step for GC languages on the web&quot;.</li>
+</ul>
+</li>
+<li class="k k-depth"><strong>Depth:</strong> Jiang et al., &quot;Bringing Managed Language Support to WebAssembly with External Library Linking&quot;, FSE 2026. Kotlin/Wasm and TeaVM 0.15 release notes.</li>
+<li class="k k-lab"><strong>Lab 8 — GC and exceptions by hand, then by toolchain (~5 h):</strong>
+<ol>
+<li>Write a WAT module that defines a <code>struct</code> and an <code>array</code>, allocates them, casts with <code>ref.cast</code>, and raises and catches an exception with <code>try_table</code>. Validate with <code>wasm-tools</code>. Run in Chrome, Firefox, Safari 18.4+ (GC needs 18.2, <code>try_table</code> needs 18.4), and Wasmtime 47+.</li>
+<li>Compile a small Dart program (<code>dart compile wasm</code>) or Kotlin/Wasm program. Dump its types with <code>wasm-tools print</code>. Count rec groups and struct types. Find the JS string builtins imports.</li>
+<li>Write a tail-recursive function with <code>return_call</code> and confirm it does not grow the stack for 10⁷ iterations.</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> your hand-written module runs in all four engines; you can explain every import in the Dart/Kotlin output.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> Why did GC languages on Wasm ship their own GC inside linear memory before 3.0, and what did that cost? What does <code>exnref</code> fix compared with the legacy EH instructions? Why do custom descriptors matter more for Kotlin than for Rust?</li>
+</ul>
+</section>
+<p class="exit"><strong>Part II exit criteria:</strong> you have the engine comparison table, the SIMD bit-exactness table, the threads scaling plot, and a hand-written GC/EH module that runs everywhere. You can explain tiering, sandbox cost, and the state of threads from memory.</p>
+<h3 id="part-iii-embedding-and-platform-weeks-9-12" class="part part-plat">Part III — Embedding and platform (Weeks 9–12)</h3>
+<p><em>Lens: platform. How Wasm talks to hosts, and how the host story became a standard of its own.</em></p>
+<section class="week" id="week-9"><header class="week-head"><span class="wk">Week 9</span><h4>The JavaScript embedding: JS API, JSPI, ESM integration, debugging</h4><div class="tags"><span class="tag tag-spec">MVP</span><span class="tag tag-spec">3.0</span><span class="tag tag-phase">P3</span><span class="tag tag-phase">P5</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> deploy a module in a page the way a 2026 toolchain would, suspend it on a promise, and debug it at source level. Choose your capstone.</li>
+<li class="k k-concepts"><strong>Concepts:</strong> the JS API (<code>compile</code>, <code>instantiate</code>, <code>instantiateStreaming</code>, <code>Memory</code>, <code>Table</code>, <code>Global</code>, <code>Module.imports/exports</code>); glue code and why wasm-bindgen exists (now at github.com/wasm-bindgen; the rustwasm org was sunset in 2025 and its book is unmaintained); JS Promise Integration (Phase 5, Jun 2026; Chrome 137, Firefox 153, Safari 27 beta; <code>WebAssembly.Suspending</code>, <code>WebAssembly.promising</code>) as the end of Asyncify; ESM Integration and source phase imports (Phase 3; not shipped anywhere; Firefox Nightly behind a flag; Chrome &quot;in development&quot;); Web CSP (<code>wasm-unsafe-eval</code>, Phase 5); <code>compileOptions</code> for string builtins; the <code>&lt;wasm-compat&gt;</code> element; DWARF debugging in DevTools; Pyodide 314 (Python 3.14.2 in the browser; Emscripten 5.0.3; <code>-fwasm-exceptions</code>; opt-in JSPI) as a mature worked example.</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>MDN, &quot;WebAssembly JavaScript API&quot; and &quot;Using the WebAssembly JavaScript API&quot;.</li>
+<li>JS Promise Integration proposal Overview.md. Then the Chrome 137 release note and the Safari 27 beta post — read both as evidence of a Phase 4→5 transition happening in real time.</li>
+<li>ESM Integration proposal Overview.md (the <code>import source</code> design).</li>
+<li>Pyodide, &quot;314 release&quot; blog post (Jun 2026) and the ABI page. What a serious project actually requires from browsers.</li>
+</ul>
+</li>
+<li class="k k-depth"><strong>Depth:</strong> Thalakottur et al., &quot;An Empirical Study of WebAssembly Usage in Node.js&quot;, ICSE 2026. Chrome DevTools, &quot;Debug C/C++ WebAssembly&quot;.</li>
+<li class="k k-lab"><strong>Lab 9 — Ship it (~5 h):</strong>
+<ol>
+<li>Build a page that loads the Week 6 Sobel kernel with <code>instantiateStreaming</code>, applies it to an uploaded image, and shows timing. Compare <code>instantiateStreaming</code> vs <code>instantiate</code> from an <code>ArrayBuffer</code>.</li>
+<li>Add JSPI: from Wasm, call an imported <code>fetch_image</code> that returns a promise, and keep the Wasm side synchronous. Emscripten's JSPI API is the shortest path; confirm it works in Chrome and Firefox 153+.</li>
+<li>Attach DevTools with DWARF and step through the kernel at source level.</li>
+<li><strong>Choose your capstone (§6).</strong> Write a half-page plan with a schedule for Weeks 10–14.</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> JSPI works in two browsers; you have set a breakpoint on a source line inside Wasm.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> What did Asyncify do, and why is JSPI better on the <em>fast</em> constraint? Why has ESM integration sat at Phase 3 for years? What is a CSP <code>wasm-unsafe-eval</code> directive protecting against?</li>
+</ul>
+</section>
+<section class="week" id="week-10"><header class="week-head"><span class="wk">Week 10</span><h4>WASI: from 0.1 to 0.3</h4><div class="tags"><span class="tag tag-wasi">WASI 0.2</span><span class="tag tag-wasi">WASI 0.3</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> build the same service on wasip2 and wasip3, in Rust and Python, and explain the 0.2→0.3 change from the Canonical ABI up.</li>
+<li class="k k-concepts"><strong>Concepts:</strong> capability-based security (preopens, no ambient authority); wasip1 (2019, witx, POSIX-like; still the CPython Tier 2 target) → wasip2 (Jan 2024; component-based; <code>wasi:cli</code>, <code>wasi:http</code>, <code>wasi:filesystem</code>, <code>wasi:sockets</code>, <code>wasi:io</code>) → wasip3 (Jun 11, 2026; <code>async func</code>, <code>stream&lt;T&gt;</code>, <code>future&lt;T&gt;</code>; <code>wasi:io</code> removed because streams moved into the Canonical ABI; the host now owns the single event loop); the release train (0.3.1 Aug 11, 2026; 0.3.2 planned Oct 13, 2026; bi-monthly through Dec 2027); the WASI Subgroup (chairs Bailey Hayes and Yosh Wuyts; meets every other Thursday); wasi-nn (Phase 2, <code>wasi:nn@0.2.0-rc-2024-10-28</code>); WASI 1.0 (no date; gated on CM 1.0).
+<ul>
+<li>Toolchain status: Rust <code>wasm32-wasip2</code> Tier 2, <code>wasm32-wasip3</code> Tier 3 (Tier 2 promotion in proposed FCP); wasi-sdk 33 with a wasip3 target; Go <code>GOOS=wasip1</code> (wasip3 proposal open); TinyGo 0.41; componentize-py 0.25 (wasip2 default, wasip3 partial); Spin 4.0 stabilized wasip3 (Jun 2026); wasmCloud 2.7 on WASI 0.3.1; Wasmtime 46+ runs wasip3 by default.</li>
+</ul>
+</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>Bytecode Alliance, &quot;WASI 0.3 Launched&quot; (Jun 11, 2026) and wasi.dev, &quot;Roadmap&quot;.</li>
+<li>The Component Model book, WASI chapters (component-model.bytecodealliance.org).</li>
+<li><code>wasi:http</code> WIT (read the 0.2 and 0.3 versions side by side; the diff <em>is</em> the lesson).</li>
+</ul>
+</li>
+<li class="k k-hist"><strong>Historical:</strong> Lin Clark, &quot;Standardizing WASI&quot; (Mozilla Hacks, Mar 2019). The capability-security argument has not changed.</li>
+<li class="k k-depth"><strong>Depth:</strong> Yu et al., &quot;Exploring and Exploiting the Resource Isolation Attack Surface of WebAssembly Containers&quot;, USENIX Security 2025. PEP 11 (wasip1 Tier 2) and PEP 783 (Emscripten wheels on PyPI, accepted Apr 2026).</li>
+<li class="k k-lab"><strong>Lab 10 — One service, two WASI versions, two languages (~6 h):</strong>
+<ol>
+<li>Rust CLI on <code>wasm32-wasip2</code> that reads a file from a preopened directory. Run with and without <code>--dir</code> and observe the capability denial.</li>
+<li>Turn it into a <code>wasi:http</code> handler. Serve with <code>wasmtime serve</code>.</li>
+<li>Rebuild on <code>wasm32-wasip3</code>. Change the handler to stream the response body with <code>stream&lt;u8&gt;</code>. Run on Wasmtime 46+ (default) and note what changed in your code.</li>
+<li>Reimplement the wasip2 handler in Python with componentize-py. Compare binary size, startup time, and the developer experience.</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> four working binaries and a table (size, cold start, lines of glue, WASI version).</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> Why did wasip2 need the Component Model at all? Where did <code>wasi:io</code> go in 0.3, and why is that not just a rename? What does &quot;the host owns the event loop&quot; mean for a component author?</li>
+</ul>
+</section>
+<section class="week" id="week-11"><header class="week-head"><span class="wk">Week 11</span><h4>The Component Model: WIT, the Canonical ABI, composition</h4><div class="tags"><span class="tag tag-cm">CM</span><span class="tag tag-phase">P1</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> design a WIT world, implement it in two languages, compose the pieces, and run the result in Wasmtime, Node, and a browser. Explain lifting and lowering.</li>
+<li class="k k-concepts"><strong>Concepts:</strong> components vs core modules; WIT (interfaces, worlds, <code>resource</code>, packages, versions); the Canonical ABI (lifting/lowering, string encodings, <code>cabi_realloc</code>; the planned lazy ABI with opaque handles); <code>wit-bindgen</code>; <code>jco</code> (transpile components to JS; componentize JS via StarlingMonkey); <code>wac</code> (composition) and <code>wkg</code> (registries, OCI); the CM's governance split — CG Phase 1 in the proposals README, but ratified and shipped through the WASI Subgroup and the Bytecode Alliance; the WG charter lists the CM as a deliverable <em>contingent on Phase 4</em>; &quot;The Road to Component Model 1.0&quot; (Jun 8, 2026): ABI improvements, at least two native browser implementations (Mozilla and Chrome evaluating), implementation accessibility (<code>lower-components</code>, two C ABIs), ecosystem, WIT expressivity (optional imports, callbacks, subtyping, map types).</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>The Component Model book, in full for the design chapters and the Rust and Python language guides.</li>
+<li>Bytecode Alliance, &quot;The Road to Component Model 1.0&quot; (Jun 8, 2026).</li>
+<li>Luke Wagner, &quot;Towards a Component Model 1.0&quot;, Wasm I/O 2026 (Barcelona, Mar 2026; video on the wasmio YouTube channel).</li>
+</ul>
+</li>
+<li class="k k-depth"><strong>Depth:</strong> Menon &amp; Wagner, &quot;The WebAssembly Component Model&quot;, WAW @ POPL 2025 (talk). The Canonical ABI explainer in the component-model repo (<code>design/mvp/CanonicalABI.md</code>) — read the lifting rules for <code>string</code> and <code>list&lt;T&gt;</code>.</li>
+<li class="k k-lab"><strong>Lab 11 — A two-language composition (~6 h):</strong>
+<ol>
+<li>Write a WIT package with an <code>image-filter</code> interface exposing a <code>resource filter</code> (construct, apply, stats) and a world that imports <code>wasi:logging</code> and exports the interface.</li>
+<li>Implement it in Rust (<code>wasm32-wasip2</code> + <code>wit-bindgen</code>) and in Python (componentize-py). Inspect both with <code>wasm-tools component wit</code>.</li>
+<li>Write a third &quot;pipeline&quot; component that imports two filters and exports one. Compose with <code>wac plug</code>.</li>
+<li>Run the composed component in Wasmtime; transpile with <code>jco</code> and run in Node and in a page; load it from Python with <code>wasmtime.component</code>.</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> one composed <code>.wasm</code> runs in three hosts; you can explain what happens to a <code>list&lt;u8&gt;</code> at the boundary.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> Why is a component not a core module with extra sections? What does the lazy ABI fix? Why does CM 1.0 require native browser implementations when jco already works?</li>
+</ul>
+</section>
+<section class="week" id="week-12"><header class="week-head"><span class="wk">Week 12</span><h4>Wasm beyond the browser: platforms, plugins, and ML inference</h4><div class="tags"><span class="tag tag-wasi">WASI 0.3</span><span class="tag tag-cm">CM</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> map the 2026 deployment landscape honestly, then benchmark a vision model in Wasm against native and write down when it is worth it.</li>
+<li class="k k-concepts"><strong>Concepts:</strong>
+<ul>
+<li>Edge/serverless: Spin 4.x and SpinKube (Fermyon, acquired by Akamai Dec 1, 2025; projects remain in CNCF), wasmCloud (CNCF Incubating), Fastly Compute (Wasmtime-based), Cloudflare Workers (Wasm; SIMD yes, threads no), Wasmer Edge (WASIX).</li>
+<li>Plugins and embedding: Extism 1.30 (Python SDK 1.1.1), wasmtime-py, Hyperlight Wasm 0.14 (Wasmtime as a <code>no_std</code> micro-VM guest; 1–2 ms start).</li>
+<li>Containers: runwasi <code>containerd-shim-wasm</code> 1.0.1; Docker Desktop's Wasm workloads are deprecated.</li>
+<li>Embedded: WAMR 2.4.5 (left the Bytecode Alliance Jul 21, 2026), Zig 0.16 (<code>wasm32-wasi</code> Tier 2), TinyGo.</li>
+<li>ML inference: ONNX Runtime Web 1.29 (wasm EP with SIMD + threads; native WebGPU EP is the recommended GPU path; JSEP and WebGL deprecated; WebNN EP experimental; 4 GB wasm32 limit and ~2 GB <code>ArrayBuffer</code> limit handled via <code>externalData</code>; memory64 loading &quot;future&quot;), Transformers.js v4 (Feb 2026; WebGPU runtime rewritten in C++ with the ORT team), LiteRT.js (Google's successor to TensorFlow.js for <code>.tflite</code>; the TF.js Wasm backend has had no release since Oct 2024), wllama 3.6 (llama.cpp in the browser), MediaPipe LLM web (maintenance-only); server-side wasi-nn in Wasmtime 48 (OpenVINO and WinML by default; ONNX via <code>ort</code>; PyTorch via <code>tch</code>; no ggml) and in WasmEdge (GGML, whisper.cpp, TFLite, PyTorch, OpenVINO); WebNN (W3C CR Draft Aug 2026; Chrome origin trial paused since Mar 2026).</li>
+<li>Production signals: Microsoft docfind (Rust + Wasm search, 0.4 ms/query), Google Sheets on WasmGC, Shopify Functions.</li>
+</ul>
+</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>Danilo Chiarlone, <em>Server-Side WebAssembly</em> (Manning, Dec 2025), chapters on WASI, components, and Kubernetes. The only current book on this half of the field.</li>
+<li>ONNX Runtime Web docs: &quot;Large models&quot;, &quot;Env flags and session options&quot;, &quot;WebGPU EP&quot;, &quot;WebNN EP&quot;.</li>
+<li>wasi-nn README and <code>wasi-nn.wit</code>; Wasmtime <code>wasi-nn</code> crate docs.</li>
+<li>Akamai press release on Fermyon (Dec 2025); Spin 4.0 release post (Jun 2026).</li>
+</ul>
+</li>
+<li class="k k-depth"><strong>Depth:</strong> &quot;WebAssembly with wasi-nn for Edge ML Inference&quot;, ECSA 2025 (overhead is small because wasi-nn delegates to native libraries; the ecosystem is the gap). Hugging Face, &quot;Transformers.js v4&quot; (Feb 2026). Fink et al., &quot;Cage: Hardware-Accelerated Safe WebAssembly&quot;, CGO 2025.</li>
+<li class="k k-lab"><strong>Lab 12 — A vision model, three ways (~6 h):</strong>
+<ol>
+<li>Export a small PyTorch classifier or detector you already use to ONNX.</li>
+<li>Run it in the browser with ORT Web: wasm EP (SIMD + threads, cross-origin isolated), then the WebGPU EP. Record latency and load time.</li>
+<li>Run it in Wasmtime through wasi-nn from a Rust component. The prebuilt CLI enables the OpenVINO backend (it reads ONNX directly); for the native ONNX backend, build Wasmtime from source with the <code>wasi-nn/onnx</code> feature. A Python guest is possible through the wasi-nn WIT but immature; do it in Rust first.</li>
+<li>Run it natively with <code>onnxruntime</code> in Python. Build the table: p50/p95 latency, cold start, binary size, memory.</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> the table plus a one-page judgment: the deployment cases where Wasm inference is the right call in Sept 2026, and the ones where it is not.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> Why is wasi-nn's overhead small, and what does that say about where the <em>fast</em> constraint is actually paid? What limits model size in the browser today? What did the Akamai–Fermyon acquisition change for a user of Spin?</li>
+</ul>
+</section>
+<p class="exit"><strong>Part III exit criteria:</strong> you have shipped a page with JSPI, four WASI binaries across two versions and two languages, a composed multi-language component running in three hosts, and the inference benchmark table. Your capstone plan is written.</p>
+<h3 id="part-iv-frontier-and-roadmap-weeks-13-14" class="part part-all">Part IV — Frontier and roadmap (Weeks 13–14)</h3>
+<p><em>Lens: all three. The process that produces the standard, the queue behind it, and the research that feeds it.</em></p>
+<section class="week" id="week-13"><header class="week-head"><span class="wk">Week 13</span><h4>The standards process and the in-flight queue</h4><div class="tags"><span class="tag tag-phase">P1</span><span class="tag tag-phase">P5</span></div></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> read a proposal repository and a CG meeting agenda fluently. Write two phase briefs. Run one post-3.0 feature.</li>
+<li class="k k-concepts"><strong>Concepts:</strong>
+<ul>
+<li>Bodies: the W3C Community Group designs (chairs Thomas Lively, Derek Schuff, Conrad Watt; video call every 14 days, Tuesdays; in-person meetings SF Feb 2025, Munich Oct 2025, Princeton Aug 4–5, 2026). The Working Group standardizes (rechartered Aug 20, 2026 through Aug 27, 2028; chairs Derek Schuff and Luke Wagner; deliverables: Core, JS Interface, Web API, Code Metadata, Legacy Extensions, and the Component Model contingent on Phase 4). The WASI Subgroup owns WASI and, in practice, the Component Model. The Bytecode Alliance is an implementer consortium, not a standards body.</li>
+<li>Phases: 0 pre-proposal → 1 feature proposal (CG vote) → 2 proposed spec text → 3 implementation (spec text, test suite, reference interpreter) → 4 standardize (two independent web-VM implementations, tests passing) → 5 standardized (WG). Finished proposals merge into the living standard; there is no &quot;Wasm 3.1&quot; — the editor's draft is &quot;3.0 (2026-09-03)&quot;.</li>
+<li>Signals: a Phase 4 vote scheduled without published notes; a browser bug citing the vote; seven of eight 2026 WG calls cancelled (the WG is a ratification body); CG calls cancelled for lack of agenda (post-3.0 lull versus the Component Model's activity elsewhere).</li>
+<li>How to read a proposal repo: <code>proposals/&lt;name&gt;/Overview.md</code> or <code>Explainer.md</code>, the <code>spec/</code> diff, <code>interpreter/</code>, <code>test/core/*.wast</code>, and the issues labeled for the next phase.</li>
+</ul>
+</li>
+<li class="k k-concepts"><strong>Deep dives (pick the first two; skim the rest):</strong>
+<ul>
+<li><strong>Stack Switching</strong> (Phase 3, Oct 2025): typed continuations (<code>cont</code>, <code>resume</code>, <code>suspend</code>, <code>switch</code>) derived from WasmFX effect handlers; the general mechanism behind JSPI; Wasmtime implementation x86_64-Linux-only and in progress; Binaryen ≥129 lowers it; Wizard supports it; no browser ships it.</li>
+<li><strong>Shared-Everything Threads</strong> (Phase 1) with <strong>Acquire-Release Atomics</strong> split out to Phase 2 (May 2026): the path to threads for GC languages and for non-browser hosts.</li>
+<li><strong>Custom Descriptors &amp; JS Interop</strong> (Phase 3, Jan 2026); <strong>Custom Page Sizes</strong> (Phase 3, Mar 2025; Wasmtime implemented); <strong>Compact Import Section</strong> (Phase 4, Aug 2026; Firefox 155); <strong>Wide Arithmetic</strong> (Phase 4, Aug 2026; Wasmtime and Wasmer ship it); <strong>FP16</strong> (Phase 2); <strong>Compilation Hints</strong> (Phase 2); <strong>Memory Control</strong> (Phase 1 since Jan 2022 — a long-stalled but important idea); <strong>Type Imports</strong>, <strong>JIT Interface</strong>, <strong>Reference-Typed Strings</strong>, <strong>Profiles</strong>, <strong>Flexible Vectors</strong> (Phase 1); <strong>Type Reflection</strong> (moved <em>back</em> to Phase 1, Mar 2026); <strong>JS Text Encoding Builtins</strong> (Phase 1, Apr 2026).</li>
+</ul>
+</li>
+<li class="k k-read"><strong>Core reading:</strong>
+<ul>
+<li>github.com/WebAssembly/proposals README and <code>finished-proposals.md</code>; the phases document in github.com/WebAssembly/meetings/process.</li>
+<li>Phipps-Costin et al., &quot;Continuing WebAssembly with Effect Handlers&quot;, OOPSLA 2023, §1–3. Then the Stack Switching <code>Explainer.md</code>.</li>
+<li>CG meeting notes: Oct 28–29, 2025 (Munich) and the Aug 4–5, 2026 (Princeton) agenda and notes when published.</li>
+<li>W3C, WebAssembly Working Group Charter (2026).</li>
+</ul>
+</li>
+<li class="k k-depth"><strong>Depth:</strong> Legoupil et al., &quot;Iris-WasmFX: Modular Reasoning for Wasm Stack Switching&quot;, PLDI 2026. Shared-Everything Threads <code>Overview.md</code> in full.</li>
+<li class="k k-lab"><strong>Lab 13 — Run the future, brief the present (~5 h + capstone):</strong>
+<ol>
+<li>Run a stack-switching example: Wasmtime on x86_64 Linux with the proposal enabled, or Wizard. Generators or a cooperative scheduler is enough.</li>
+<li>Write two one-page <strong>phase briefs</strong>: what the proposal does, which constraint it serves and which it strains, current phase and date, implementation status per engine, blockers, and what evidence would advance it. One for Stack Switching, one for a Phase 1 or 2 proposal of your choice.</li>
+<li>Update the proposal tracker (§7) against the live README.</li>
+</ol>
+<ul>
+<li class="k k-exit"><strong>Exit check:</strong> both briefs cite the repo, the phase-vote notes, and at least one engine's status page.</li>
+</ul>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> What must a proposal have to enter Phase 3, and what must it have to enter Phase 4? Why is the Component Model at Phase 1 in the CG while WASI 0.3 ships on it? What is the relationship between JSPI and stack switching?</li>
+</ul>
+</section>
+<section class="week" id="week-14"><header class="week-head"><span class="wk">Week 14</span><h4>Research frontier and capstone completion</h4></header>
+<ul>
+<li class="k k-goal"><strong>Goal:</strong> finish the capstone, write the retrospective, and leave with a map of the research literature and an update routine.</li>
+<li class="k k-concepts"><strong>Concepts, organized by what they let you trust:</strong>
+<ul>
+<li><em>Trust the spec:</em> WasmCert (Isabelle and Coq mechanizations), SpecTec, progressful interpreters (POPL 2025: a verified spec interpreter that is also fast).</li>
+<li><em>Trust the engine:</em> Crocus (ASPLOS 2024) and its successor verifying Cranelift backends against vendor ISA semantics (OOPSLA 2025); VeriWasm; RGFuzz (IEEE S&amp;P 2025) and differential fuzzing of runtimes.</li>
+<li><em>Trust the program:</em> Iris-Wasm (PLDI 2023), Iris-WasmFX (PLDI 2026), CT-Wasm (POPL 2019), MSWasm (POPL 2023).</li>
+<li><em>Trust the sandbox:</em> Swivel, Segue/ColorGuard (ASPLOS 2025), Cage (CGO 2025), WASI container attack surface (USENIX Security 2025).</li>
+<li><em>Observe the program:</em> Wasabi (ASPLOS 2019), Wizard instrumentation (ASPLOS 2024), Whamm (OOPSLA 2025), Wasm-R3 (OOPSLA 2024), Wasure (arXiv 2026).</li>
+<li><em>Observe the ecosystem:</em> Hilbig et al. (WWW 2021), Web Almanac 2025, Node.js usage study (ICSE 2026), managed-language linking (FSE 2026).</li>
+<li><em>Open problems as of Sept 2026:</em> threads outside the browser; the Component Model in browsers; GC-object interop with JS (custom descriptors); source-level debugging beyond C/C++; memory64 performance; Spectre without a performance tax; the adoption gap (0.35% of sites) versus the off-browser growth.</li>
+</ul>
+</li>
+<li class="k k-read"><strong>Core reading:</strong> three papers from the annotated list (§10) chosen to match your capstone. Harnes &amp; Morrison, &quot;SoK: Analysis Techniques for WebAssembly&quot;, <em>Future Internet</em> 2024, as the map.</li>
+<li class="k k-lab"><strong>Deliverables:</strong>
+<ol>
+<li>Capstone complete, with its own README and a benchmark or test result.</li>
+<li>A two-page retrospective: what the four constraints predicted correctly, and where the ecosystem surprised you.</li>
+<li>A one-page &quot;State of WebAssembly&quot; in your own words, dated, written without looking at this file. Compare it with §3 and §7 afterwards.</li>
+<li>Calendar entries for the quarterly watchlist (§9).</li>
+</ol>
+</li>
+<li class="k k-self"><strong>Self-check:</strong> Which trust layer does your capstone sit in? What single 2027 event would most change your one-pager?</li>
+</ul>
+</section>
+<p class="exit"><strong>Course exit criteria:</strong> all four part-level criteria met; capstone shipped; the three written deliverables exist; the tracker is current to the day you finish.</p>
+<hr />
+<h2 id="capstone">6. Capstone menu (choose in Week 9)</h2>
+<p>Reserved budget: ~5 h/week in Weeks 10–13 plus most of Week 14 ≈ 30–35 h. Options A and C fit that budget. Options B and D need one or two extra weeks; plan for them.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>A — Vision inference at the edge</th>
+<th>B — Interpreter and validator from the spec</th>
+<th>C — Multi-language plugin system</th>
+<th>D — Engine or proposal implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Lens</strong></td>
+<td>Platform</td>
+<td>Semantics</td>
+<td>Platform</td>
+<td>Engines</td>
+</tr>
+<tr>
+<td><strong>Effort</strong></td>
+<td>35–45 h</td>
+<td>40–60 h</td>
+<td>35–45 h</td>
+<td>40–60 h</td>
+</tr>
+<tr>
+<td><strong>Builds on</strong></td>
+<td>Labs 6, 9, 10, 12</td>
+<td>Labs 2, 3</td>
+<td>Labs 10, 11</td>
+<td>Labs 3, 5, 13</td>
+</tr>
+<tr>
+<td><strong>Scope</strong></td>
+<td>Export a model you use at work to ONNX. Wrap inference in a WIT <code>inference</code> interface. Run it (1) in the browser via ORT Web wasm EP and WebGPU EP, (2) in Wasmtime via wasi-nn, (3) natively. Add a preprocessing component in Rust with SIMD.</td>
+<td>Extend Lab 3 to the full 1.0 core test suite, then the 2.0 subset (multi-value, bulk memory, reference types, sign-ext, non-trapping conversions). Full validation. Use <code>wasm-tools</code> for text parsing or write your own.</td>
+<td>Python host (<code>wasmtime-py</code>) loads plugins that share one WIT world. Plugins in Rust, Python (componentize-py), and JS (jco componentize). One plugin streams results over a WASI 0.3 <code>stream&lt;T&gt;</code>. Resource limits: fuel, memory caps, epoch interruption.</td>
+<td>Pick one: (i) implement Wide Arithmetic or FP16 in your Lab 3 interpreter, pass the proposal's <code>.wast</code> tests, and write a mock phase-advancement brief; (ii) add a monitor to Wizard; (iii) write a Binaryen optimization pass; (iv) a baseline x86-64 compiler for the Lab 3 subset.</td>
+</tr>
+<tr>
+<td><strong>Deliverable</strong></td>
+<td>Benchmark table (p50/p95 latency, cold start, memory, size) across three deployments; a written deployment recommendation.</td>
+<td>Test-suite pass rate report; a document listing every spec rule you implemented and the ones you skipped.</td>
+<td>A working plugin host with three plugins and a threat-model note on what a malicious plugin can and cannot do.</td>
+<td>Passing proposal tests or a measured speedup; a brief written to the CG's phase requirements.</td>
+</tr>
+<tr>
+<td><strong>Stretch</strong></td>
+<td>Run the same component on Spin 4 or wasmCloud; try WebNN where available.</td>
+<td>Implement one 3.0 feature (tail calls or multiple memories).</td>
+<td>Hot-reload plugins; a wasip3 host in Rust for comparison.</td>
+<td>Submit an issue or PR upstream.</td>
+</tr>
+<tr>
+<td><strong>Done when</strong></td>
+<td>Recommendation is defensible with numbers.</td>
+<td>≥95% of 1.0 core tests pass.</td>
+<td>All three plugins pass the same conformance tests.</td>
+<td>Tests pass, or the brief survives your own Week 13 checklist.</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="tracker">7. Proposal tracker — core Wasm, as of 2026-09-04</h2>
+<figure class="fig">
+<svg viewBox="0 0 1000 322" role="img" aria-label="Six phase columns from Phase 0 to Phase 5, then the living standard. Each column names what a proposal needs to enter it and lists the proposals sitting there on September 4, 2026: Phase 5 holds JS Promise Integration and Web CSP; Phase 4 holds Threads, Compact Import Section, Wide Arithmetic; Phase 3 holds ESM Integration, Stack Switching, Custom Page Sizes, Custom Descriptors and JS Interop; Phase 2 holds FP16, Compilation Hints, Acquire-Release Atomics, JS Primitive Builtins and others; Phase 1 holds Shared-Everything Threads, the Component Model, Type Imports, Memory Control and others.">
+<defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+<line x1="20" y1="32" x2="986" y2="32" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr2)"/>
+<text class="halo" x="500" y="36" text-anchor="middle">proposals move right; each column says what earns entry</text>
+<rect x="20" y="58" width="128" height="250" rx="6" fill="none" stroke="currentColor" stroke-opacity=".45"/><text class="ph" x="30" y="82">Phase 0</text><text class="sub" x="30" y="98">pre-proposal</text><line x1="30" y1="108" x2="138" y2="108" stroke="currentColor" stroke-opacity=".3"/><text class="need" x="30" y="124">an issue in the design</text><text class="need" x="30" y="137">repo</text><text x="30" y="160">ideas</text><rect x="160" y="58" width="128" height="250" rx="6" fill="none" stroke="currentColor" stroke-opacity=".45"/><text class="ph" x="170" y="82">Phase 1</text><text class="sub" x="170" y="98">feature proposal</text><line x1="170" y1="108" x2="278" y2="108" stroke="currentColor" stroke-opacity=".3"/><text class="need" x="170" y="124">CG vote: worth exploring</text><text x="170" y="160">Shared-Everything Threads</text><text x="170" y="176">Component Model</text><text x="170" y="192">Type Imports</text><text x="170" y="208">Memory Control</text><text x="170" y="224">JIT Interface</text><text x="170" y="240">Reference-Typed Strings</text><text x="170" y="256">Profiles</text><text x="170" y="272">Flexible Vectors</text><text class="more" x="170" y="288">+ 5 more</text><rect x="300" y="58" width="128" height="250" rx="6" fill="none" stroke="currentColor" stroke-opacity=".45"/><text class="ph" x="310" y="82">Phase 2</text><text class="sub" x="310" y="98">spec text</text><line x1="310" y1="108" x2="418" y2="108" stroke="currentColor" stroke-opacity=".3"/><text class="need" x="310" y="124">proposed spec text</text><text class="need" x="310" y="137">exists</text><text x="310" y="160">FP16</text><text x="310" y="176">Compilation Hints</text><text x="310" y="192">Acquire-Release Atomics</text><text x="310" y="208">JS Primitive Builtins</text><text x="310" y="224">Multibyte Array Access</text><text class="more" x="310" y="240">+ 4 more</text><rect x="440" y="58" width="128" height="250" rx="6" fill="none" stroke="currentColor" stroke-opacity=".45"/><text class="ph" x="450" y="82">Phase 3</text><text class="sub" x="450" y="98">implementation</text><line x1="450" y1="108" x2="558" y2="108" stroke="currentColor" stroke-opacity=".3"/><text class="need" x="450" y="124">spec, tests, reference</text><text class="need" x="450" y="137">interpreter</text><text x="450" y="160">ESM Integration</text><text x="450" y="176">Stack Switching</text><text x="450" y="192">Custom Page Sizes</text><text x="450" y="208">Custom Descriptors</text><text class="more" x="450" y="224">&amp; JS Interop</text><rect x="580" y="58" width="128" height="250" rx="6" fill="none" stroke="currentColor" stroke-opacity=".45"/><text class="ph" x="590" y="82">Phase 4</text><text class="sub" x="590" y="98">standardize</text><line x1="590" y1="108" x2="698" y2="108" stroke="currentColor" stroke-opacity=".3"/><text class="need" x="590" y="124">two web VMs pass the</text><text class="need" x="590" y="137">tests</text><text x="590" y="160">Threads</text><text x="590" y="176">Compact Import Section</text><text x="590" y="192">Wide Arithmetic</text><rect x="720" y="58" width="128" height="250" rx="6" fill="none" stroke="currentColor" stroke-opacity=".45"/><text class="ph" x="730" y="82">Phase 5</text><text class="sub" x="730" y="98">standardized</text><line x1="730" y1="108" x2="838" y2="108" stroke="currentColor" stroke-opacity=".3"/><text class="need" x="730" y="124">WG vote</text><text x="730" y="160">JS Promise Integration</text><text x="730" y="176">Web CSP</text><rect class="sink" x="860" y="58" width="128" height="250" rx="6" fill="none" stroke="currentColor" stroke-opacity=".45"/><text class="ph" x="870" y="82">Standard</text><text class="sub" x="870" y="98">living 3.0 draft</text><line x1="870" y1="108" x2="978" y2="108" stroke="currentColor" stroke-opacity=".3"/><text class="need" x="870" y="124">merged into the spec</text><text x="870" y="160">3.0 · Sep 2025</text><text class="more" x="870" y="176">12 features</text><text x="870" y="192">2.0 · Mar 2025</text><text x="870" y="208">1.0 · Dec 2019</text>
+</svg>
+<figcaption>The proposal pipeline on September 4, 2026. Read it right to left for "what lands next": JSPI and Web CSP are standardized and await spec merge; Compact Import Section and Wide Arithmetic passed Phase 4 in August. The Component Model sits at Phase 1 in the CG even though WASI 0.3 ships on it — the WASI Subgroup and the Bytecode Alliance carry it in practice.</figcaption>
+</figure>
+<p>Source: github.com/WebAssembly/proposals README, fetched 2026-09-04. Update every two weeks. Dates are the CG/WG vote that reached the listed phase.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Proposal</th>
+<th>Phase</th>
+<th>What it does</th>
+<th>Where it runs (Sept 2026)</th>
+<th>Watch for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JS Promise Integration</td>
+<td>5 (WG, Jun 24, 2026)</td>
+<td>Wasm suspends on a JS promise; sync-looking code awaits.</td>
+<td>Chrome 137, Firefox 153, Safari 27 beta</td>
+<td>Safari 27 final; merge into JS API spec</td>
+</tr>
+<tr>
+<td>Web Content Security Policy</td>
+<td>5 (WG, Jun 24, 2026)</td>
+<td>How CSP governs Wasm compilation.</td>
+<td>All browsers</td>
+<td>Spec merge</td>
+</tr>
+<tr>
+<td>Threads</td>
+<td>4 (Oct 2023)</td>
+<td>Shared memory, atomics, wait/notify.</td>
+<td>Chrome 74, Firefox 79, Safari 14.1; Wasmtime Tier 2</td>
+<td>Spec merge; Wasmtime shared-memory limits</td>
+</tr>
+<tr>
+<td>Compact Import Section</td>
+<td>4 (Aug 2026, notes unpublished)</td>
+<td>Compressed encoding for import-heavy modules.</td>
+<td>Firefox 155</td>
+<td>Chrome/Safari; Wasmtime unimplemented</td>
+</tr>
+<tr>
+<td>Wide Arithmetic</td>
+<td>4 (Aug 2026, notes unpublished)</td>
+<td><code>i64.add128</code>, <code>sub128</code>, <code>mul_wide_s/u</code>.</td>
+<td>Wasmtime (on), Wasmer 7.1</td>
+<td>Browser ships</td>
+</tr>
+<tr>
+<td>ESM Integration</td>
+<td>3 (date not located)</td>
+<td><code>.wasm</code> as an ES module; <code>import source</code>.</td>
+<td>Nowhere shipped; Firefox Nightly flag; Chrome in development</td>
+<td>First browser ship</td>
+</tr>
+<tr>
+<td>Stack Switching</td>
+<td>3 (Oct 28–29, 2025)</td>
+<td>Typed continuations: <code>cont</code>, <code>resume</code>, <code>suspend</code>, <code>switch</code>.</td>
+<td>Wasmtime WIP (x86_64 Linux only); Wizard; Binaryen ≥129</td>
+<td>Second engine; browser prototypes</td>
+</tr>
+<tr>
+<td>Custom Page Sizes</td>
+<td>3 (Mar 25, 2025)</td>
+<td>1-byte or 64 KiB page memories for embedded.</td>
+<td>Wasmtime Tier 2</td>
+<td>Browser interest</td>
+</tr>
+<tr>
+<td>Custom Descriptors &amp; JS Interop</td>
+<td>3 (Jan 27, 2026)</td>
+<td>JS prototypes and descriptors for GC objects.</td>
+<td>Prototypes in V8 (<span class="unv">unverified</span>)</td>
+<td>Chrome flag ship</td>
+</tr>
+<tr>
+<td>FP16</td>
+<td>2 (Aug 2026, notes unpublished)</td>
+<td>Half-precision scalar and SIMD.</td>
+<td>—</td>
+<td>Phase 3 spec text</td>
+</tr>
+<tr>
+<td>Compilation Hints</td>
+<td>2</td>
+<td>Per-function optimization hints in custom sections.</td>
+<td>—</td>
+<td>Engine adoption</td>
+</tr>
+<tr>
+<td>Acquire-Release Atomics</td>
+<td>2 (May 2026 split)</td>
+<td>Weaker-ordering atomics.</td>
+<td>—</td>
+<td>Phase 3 vote</td>
+</tr>
+<tr>
+<td>JS Primitive Builtins</td>
+<td>2 (Oct 2025)</td>
+<td>More <code>wasm:</code> builtins for JS primitives.</td>
+<td>—</td>
+<td>Phase 3</td>
+</tr>
+<tr>
+<td>Multibyte Array Access, Extended Name Section, Relaxed Dead Code Validation, Rounding Variants, Numeric Values in WAT Data Segments</td>
+<td>2</td>
+<td>Small ergonomic or numeric additions.</td>
+<td>—</td>
+<td>Consolidation</td>
+</tr>
+<tr>
+<td>Shared-Everything Threads</td>
+<td>1</td>
+<td><code>shared</code> GC types, tables, globals; thread-local globals.</td>
+<td>—</td>
+<td>Phase 2 spec text; browser prototype</td>
+</tr>
+<tr>
+<td>Type Imports</td>
+<td>1</td>
+<td>Import abstract types.</td>
+<td>—</td>
+<td>Revival tied to CM/GC</td>
+</tr>
+<tr>
+<td>Memory Control</td>
+<td>1 (Jan 2022)</td>
+<td>mmap-style protection and mapping for linear memory.</td>
+<td>—</td>
+<td>Any movement</td>
+</tr>
+<tr>
+<td>Reference-Typed Strings</td>
+<td>1</td>
+<td><code>stringref</code> host-string type.</td>
+<td>Chrome experiment only (historical)</td>
+<td>Superseded by string builtins?</td>
+</tr>
+<tr>
+<td>Profiles</td>
+<td>1</td>
+<td>Framework for spec subsets (deterministic profile shipped in 3.0).</td>
+<td>—</td>
+<td>Embedded profile</td>
+</tr>
+<tr>
+<td>JIT Interface</td>
+<td>1</td>
+<td>Runtime code generation into a live instance.</td>
+<td>—</td>
+<td>Phase 2</td>
+</tr>
+<tr>
+<td>Component Model</td>
+<td>1</td>
+<td>WIT, worlds, resources, canonical ABI, composition.</td>
+<td>Wasmtime (on by default), jco, Spin, wasmCloud</td>
+<td>CM 1.0; two native browser implementations; CG phase advance</td>
+</tr>
+<tr>
+<td>Flexible Vectors, Frozen Values, More Array Constructors, C/C++ API, Type Reflection (back to 1, Mar 2026), JS Text Encoding Builtins (Apr 2026)</td>
+<td>1</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>WASI (Subgroup) items worth tracking:</strong> WASI 0.3.2 (planned Oct 13, 2026), CM cooperative threads and stream splicing (early 0.3.x), wasi-nn (Phase 2; async/0.3 version not started), WASI 1.0 (no date).</p>
+<hr />
+<h2 id="status">8. Status snapshot — browsers and engines, Sept 4, 2026</h2>
+<p><strong>Browsers</strong> (first shipping version; &quot;STP&quot; = Safari Technology Preview only, not a shipping Safari):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Chrome</th>
+<th>Firefox</th>
+<th>Safari</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Threads/atomics</td>
+<td>74</td>
+<td>79</td>
+<td>14.1</td>
+</tr>
+<tr>
+<td>Extended const</td>
+<td>114</td>
+<td>112</td>
+<td>17.4</td>
+</tr>
+<tr>
+<td>Tail calls</td>
+<td>112</td>
+<td>121</td>
+<td>18.2</td>
+</tr>
+<tr>
+<td>GC</td>
+<td>119</td>
+<td>120</td>
+<td>18.2 (Dec 2024)</td>
+</tr>
+<tr>
+<td>Multiple memories</td>
+<td>120</td>
+<td>125</td>
+<td>STP 250 (Aug 2026)</td>
+</tr>
+<tr>
+<td>Relaxed SIMD</td>
+<td>114</td>
+<td>145 (Nov 2025)</td>
+<td>STP 250</td>
+</tr>
+<tr>
+<td>Memory64</td>
+<td>133 (Feb 2025)</td>
+<td>134 (Jan 2025)</td>
+<td>STP 251 (Aug 26, 2026)</td>
+</tr>
+<tr>
+<td>Exception handling (exnref)</td>
+<td>137 (<span class="unv">unverified</span> milestone)</td>
+<td>131 (Oct 2024)</td>
+<td>18.4 (Mar 2025)</td>
+</tr>
+<tr>
+<td>JS string builtins</td>
+<td>130</td>
+<td>134</td>
+<td>26.2 (Dec 2025)</td>
+</tr>
+<tr>
+<td>Branch hinting</td>
+<td>137</td>
+<td>flag</td>
+<td>listed as 16 (semantics <span class="unv">unverified</span>)</td>
+</tr>
+<tr>
+<td>JSPI</td>
+<td>137 (May 2025)</td>
+<td>153 (Jul 2026)</td>
+<td>27 beta (Jun 2026)</td>
+</tr>
+<tr>
+<td>ESM integration</td>
+<td>in development</td>
+<td>Nightly flag</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Compact import section</td>
+<td>—</td>
+<td>155 (Sep 1, 2026)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Engines:</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Engine</th>
+<th>Version</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wasmtime</td>
+<td>48.0.1 (Aug 24, 2026; 48.0 LTS on Aug 20)</td>
+<td>Monthly majors on the 20th; LTS every 12th. 46: WASI 0.3 default. 47: GC and EH default; wasi-threads removed. All 3.0 features on; custom page sizes on; stack switching WIP.</td>
+</tr>
+<tr>
+<td>Wasmer</td>
+<td>7.1.0 (Mar 2026); 7.2 rc</td>
+<td>Tail calls, extended const, relaxed SIMD, wide arithmetic. WASIX.</td>
+</tr>
+<tr>
+<td>WAMR</td>
+<td>2.4.5 (Jun 2026)</td>
+<td>Left the Bytecode Alliance Jul 21, 2026. Embedded focus.</td>
+</tr>
+<tr>
+<td>wasm3</td>
+<td>maintenance only</td>
+<td>Historic fast interpreter; do not build on it.</td>
+</tr>
+<tr>
+<td>Wizard</td>
+<td>main</td>
+<td>Teaching and research engine; 3.0 features plus stack switching.</td>
+</tr>
+<tr>
+<td>V8 / SpiderMonkey / JSC</td>
+<td>current stable</td>
+<td>DrumBrake–Liftoff–Turboshaft; Rabaldr–Ion; IPInt–BBQ–OMG.</td>
+</tr>
+<tr>
+<td>Hyperlight Wasm</td>
+<td>0.14.0 (Apr 2026)</td>
+<td>Wasmtime as a micro-VM guest; 1–2 ms start.</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="watchlist">9. Roadmap watchlist — check quarterly</h2>
+<ul>
+<li><strong>Proposals by phase:</strong> github.com/WebAssembly/proposals (README and <code>finished-proposals.md</code>). Diff against §7.</li>
+<li><strong>CG and WG meeting notes:</strong> github.com/WebAssembly/meetings (<code>main/2026/</code>, <code>main/2027/</code>). Look for phase votes and scheduled in-person meetings.</li>
+<li><strong>Spec editor's draft:</strong> webassembly.github.io/spec/core — the date in the header tells you when text last merged.</li>
+<li><strong>WASI:</strong> wasi.dev/roadmap (release train dates) and bytecodealliance.org/articles (0.3.x posts, CM 1.0 progress).</li>
+<li><strong>Browser status:</strong> webassembly.org/features (lags slightly), chromestatus.com, webkit.org blog (Safari x.y and STP release notes), Firefox release notes and Bugzilla.</li>
+<li><strong>Wasmtime:</strong> RELEASES.md on the 20th of each month; the proposal support matrix at docs.wasmtime.dev/stability-wasm-proposals.html.</li>
+<li><strong>Toolchains:</strong> Rust platform-support page (<code>wasm32-wasip3</code> tier), componentize-py and jco releases, Emscripten ChangeLog, wasi-sdk releases, Pyodide changelog.</li>
+<li><strong>ML:</strong> ONNX Runtime releases (WebGPU EP and memory64 notes), Transformers.js releases, WebNN spec status and Chrome origin trial.</li>
+<li><strong>Conferences:</strong> Wasm I/O (spring, Barcelona), WasmCon (co-located with KubeCon EU in spring and NA in November; NA 2026 is Nov 9 in Salt Lake City), WAW at POPL (January).</li>
+<li><strong>Three questions each quarter:</strong> Did anything reach Phase 4 or 5? Did Safari or Chrome ship a feature from §8? Did WASI 0.3.x or the CM 1.0 plan change the Canonical ABI?</li>
+</ul>
+<hr />
+<h2 id="reading">10. Annotated reading list</h2>
+<p>Verified on 2026-09-04: authors, venue, year, and URL. <em>Core</em> items appear in a week above. Everything else is depth.</p>
+<h3 id="from-zero-weeks-0-2">From zero (Weeks 0–2)</h3>
+<ul>
+<li>Dubroy &amp; Guerra, <em>WebAssembly from the Ground Up</em> — https://wasmgroundup.com/ — interactive book; you build a compiler that emits Wasm. $19 as of Sep 2026. <em>Core.</em></li>
+<li>Lin Clark, &quot;A cartoon intro to WebAssembly&quot; (Mozilla Hacks, 2017) — https://hacks.mozilla.org/2017/02/a-cartoon-intro-to-webassembly/ — <em>Historical, core for Week 1.</em></li>
+<li>MDN WebAssembly docs — https://developer.mozilla.org/en-US/docs/WebAssembly — maintained. <em>Core.</em></li>
+<li>Andy Wingo, &quot;WebAssembly: Yes, but for What?&quot;, ACM Queue 23(3), 2025 — https://queue.acm.org/detail.cfm?id=3746171 — <em>Core.</em></li>
+<li>Web Almanac 2025, WebAssembly chapter — https://almanac.httparchive.org/en/2025/webassembly — <em>Core.</em></li>
+<li>Linux Foundation LFD133, &quot;Introduction to WebAssembly&quot; — https://training.linuxfoundation.org/training/introduction-to-webassembly-lfd133/ — free to audit; 2021 content. Optional.</li>
+<li>Brian Sletten, <em>WebAssembly: The Definitive Guide</em> (O'Reilly, 2021) — broad, pre-3.0. Optional.</li>
+<li>Rick Battagline, <em>The Art of WebAssembly</em> (No Starch, 2021) — WAT-heavy, good for Week 2. Optional.</li>
+<li>Dan Gohman, <em>WebAssembly Reference Manual</em> — https://github.com/sunfishcode/wasm-reference-manual — MVP-era. Optional.</li>
+<li>Avoid: <em>Rust and WebAssembly</em> book (rustwasm.github.io) — unmaintained; the rustwasm org was sunset in 2025 and wasm-pack archived. Use the wasm-bindgen docs at github.com/wasm-bindgen instead.</li>
+</ul>
+<h3 id="design-and-semantics">Design and semantics</h3>
+<ul>
+<li>Haas et al., &quot;Bringing the Web up to Speed with WebAssembly&quot;, PLDI 2017 — https://doi.org/10.1145/3062341.3062363 — <em>Core.</em> CACM Research Highlight (Rossberg et al., 2018): https://doi.org/10.1145/3282510.</li>
+<li>Youn et al., &quot;Bringing the WebAssembly Standard up to Speed with SpecTec&quot;, PLDI 2024 — https://doi.org/10.1145/3656440 — <em>Core.</em> Repo: https://github.com/Wasm-DSL/spectec.</li>
+<li>Watt, &quot;Mechanising and Verifying the WebAssembly Specification&quot;, CPP 2018 — https://doi.org/10.1145/3167082.</li>
+<li>Watt, Rao, Pichon-Pharabod, Bodin, Gardner, &quot;Two Mechanisations of WebAssembly 1.0&quot;, FM 2021 — https://doi.org/10.1007/978-3-030-90870-6_4.</li>
+<li>Rao, Radziuk, Watt, Gardner, &quot;Progressful Interpreters for Efficient WebAssembly Mechanisation&quot;, POPL 2025 — https://doi.org/10.1145/3704858.</li>
+<li>Rao, Georges, Legoupil, Watt, Pichon-Pharabod, Gardner, Birkedal, &quot;Iris-Wasm&quot;, PLDI 2023 — https://doi.org/10.1145/3591265.</li>
+<li>Legoupil, Pedersen, Birkedal, Lindley, Pichon-Pharabod, &quot;Iris-WasmFX: Modular Reasoning for Wasm Stack Switching&quot;, PLDI 2026 — https://doi.org/10.1145/3808271.</li>
+<li>Phipps-Costin et al., &quot;Continuing WebAssembly with Effect Handlers&quot;, OOPSLA 2023 — https://doi.org/10.1145/3622814 — <em>Core, Week 13.</em></li>
+<li>Watt, Rossberg, Pichon-Pharabod, &quot;Weakening WebAssembly&quot;, OOPSLA 2019 — https://doi.org/10.1145/3360559 — <em>Core, Week 7.</em></li>
+<li>Conrad Watt, &quot;Concurrency in WebAssembly&quot;, ACM Queue 23(3), 2025 — https://doi.org/10.1145/3747201.3746173 — <em>Core, Week 7.</em></li>
+<li>The specification — https://webassembly.github.io/spec/core/ (living editor's draft; header shows the last merge date).</li>
+</ul>
+<h3 id="engines-and-performance">Engines and performance</h3>
+<ul>
+<li>Titzer, &quot;A Fast In-Place Interpreter for WebAssembly&quot;, OOPSLA 2022 — https://doi.org/10.1145/3563311 — <em>Core, Week 5.</em></li>
+<li>Fallin &amp; Bernstein, &quot;Partial Evaluation, Whole-Program Compilation&quot; (weval), PLDI 2025 — https://doi.org/10.1145/3729259.</li>
+<li>VanHattum, Pardeshi, Fallin, Sampson, Brown, &quot;Lightweight, Modular Verification for WebAssembly-to-Native Instruction Selection&quot; (Crocus), ASPLOS 2024 — https://doi.org/10.1145/3617232.3624862.</li>
+<li>McLoughlin et al., &quot;Scaling Instruction-Selection Verification against Authoritative ISA Semantics&quot;, OOPSLA 2025 — https://doi.org/10.1145/3764383.</li>
+<li>Chris Fallin's Cranelift posts — https://cfallin.org/ — no peer-reviewed regalloc2/ISLE paper exists; this is the primary source. <em>Core, Week 5.</em></li>
+<li>V8 architecture doc — https://github.com/v8/v8/blob/main/docs/wasm/architecture.md ; &quot;Leaving the Sea of Nodes&quot; — https://v8.dev/blog/leaving-the-sea-of-nodes. <em>Core, Week 5.</em></li>
+<li>Wasmtime docs — https://docs.wasmtime.dev/ (Cranelift, Winch, proposal matrix, profiling). <em>Core.</em></li>
+<li>Jangda, Powers, Berger, Guha, &quot;Not So Fast&quot;, USENIX ATC 2019 — https://www.usenix.org/conference/atc19/presentation/jangda — <em>Core, Week 4.</em></li>
+<li>Yan et al., &quot;Understanding the Performance of WebAssembly Applications&quot;, IMC 2021 — https://doi.org/10.1145/3487552.3487827.</li>
+<li>Baek et al., &quot;Wasm-R3&quot;, OOPSLA 2024 — https://doi.org/10.1145/3689787 — <em>Core, Week 6.</em> Repo: https://github.com/sola-st/wasm-r3.</li>
+<li>Zhang et al., &quot;Research on WebAssembly Runtimes: A Survey&quot;, ACM TOSEM 2025 — https://doi.org/10.1145/3714465.</li>
+<li>Carissimi &amp; Titzer, &quot;Wasure&quot; toolkit, arXiv 2026 — https://arxiv.org/abs/2602.05488.</li>
+<li>Sightglass benchmark suite — https://github.com/bytecodealliance/sightglass ; PolyBench/C-wasm — https://github.com/JamesMenetrey/webassembly-polybench-c.</li>
+</ul>
+<h3 id="security-and-sandboxing">Security and sandboxing</h3>
+<ul>
+<li>Lehmann, Kinder, Pradel, &quot;Everything Old is New Again: Binary Security of WebAssembly&quot;, USENIX Security 2020 — https://www.usenix.org/conference/usenixsecurity20/presentation/lehmann — <em>Core, Week 4.</em></li>
+<li>Narayan et al., &quot;Retrofitting Fine Grain Isolation in the Firefox Renderer&quot; (RLBox), USENIX Security 2020 — https://www.usenix.org/conference/usenixsecurity20/presentation/narayan — <em>Core, Week 4.</em></li>
+<li>Narayan et al., &quot;Swivel: Hardening WebAssembly against Spectre&quot;, USENIX Security 2021 — https://www.usenix.org/conference/usenixsecurity21/presentation/narayan.</li>
+<li>Johnson et al., &quot;Доверяй, но проверяй: SFI safety for native-compiled Wasm&quot; (VeriWasm), NDSS 2021 — https://www.ndss-symposium.org/wp-content/uploads/ndss2021_5B-3_24078_paper.pdf.</li>
+<li>Bosamiya, Lim, Parno, &quot;Provably-Safe Multilingual Software Sandboxing using WebAssembly&quot;, USENIX Security 2022 — https://www.usenix.org/conference/usenixsecurity22/presentation/bosamiya.</li>
+<li>Narayan et al., &quot;Segue &amp; ColorGuard: Optimizing SFI Performance and Scalability&quot;, ASPLOS 2025 — https://doi.org/10.1145/3669940.3707249.</li>
+<li>Fink et al., &quot;Cage: Hardware-Accelerated Safe WebAssembly&quot;, CGO 2025 — https://doi.org/10.1145/3696443.3708920.</li>
+<li>Watt et al., &quot;CT-Wasm&quot;, POPL 2019 — https://doi.org/10.1145/3290390.</li>
+<li>Michael et al., &quot;MSWasm&quot;, POPL 2023 — https://doi.org/10.1145/3571208.</li>
+<li>Park, Kim, Yun, &quot;RGFuzz: Rule-Guided Fuzzer for WebAssembly Runtimes&quot;, IEEE S&amp;P 2025 — https://ieeexplore.ieee.org/document/11023506.</li>
+<li>Yu et al., &quot;Exploring and Exploiting the Resource Isolation Attack Surface of WebAssembly Containers&quot;, USENIX Security 2025 — https://www.usenix.org/system/files/usenixsecurity25-yu-zhaofeng.pdf.</li>
+<li>Harnes &amp; Morrison, &quot;SoK: Analysis Techniques for WebAssembly&quot;, <em>Future Internet</em> 16(3), 2024 — https://doi.org/10.3390/fi16030084 — <em>Core, Week 14.</em> Runner-up: Perrone &amp; Romano, &quot;WebAssembly and security: A review&quot;, <em>Computer Science Review</em> 2025 — https://doi.org/10.1016/j.cosrev.2025.100728.</li>
+</ul>
+<h3 id="instrumentation-and-empirical-studies">Instrumentation and empirical studies</h3>
+<ul>
+<li>Lehmann &amp; Pradel, &quot;Wasabi&quot;, ASPLOS 2019 — https://doi.org/10.1145/3297858.3304068.</li>
+<li>Titzer et al., &quot;Flexible Non-intrusive Dynamic Instrumentation for WebAssembly&quot;, ASPLOS 2024 — https://doi.org/10.1145/3620666.3651338.</li>
+<li>Gilbert et al., &quot;Debugging WebAssembly? Put Some Whamm on It!&quot;, OOPSLA 2025 — https://doi.org/10.1145/3763124. Repo: https://github.com/ejrgilbert/whamm.</li>
+<li>Hilbig, Lehmann, Pradel, &quot;An Empirical Study of Real-World WebAssembly Binaries&quot;, WWW 2021 — https://doi.org/10.1145/3442381.3450138.</li>
+<li>Thalakottur et al., &quot;An Empirical Study of WebAssembly Usage in Node.js&quot;, ICSE 2026 — https://conf.researchr.org/details/icse-2026/icse-2026-research-track/16/An-Empirical-Study-of-WebAssembly-Usage-in-Node-js.</li>
+<li>Jiang et al., &quot;Bringing Managed Language Support to WebAssembly with External Library Linking&quot;, FSE 2026 — https://doi.org/10.1145/3808182.</li>
+</ul>
+<h3 id="platform-wasi-component-model-deployment">Platform: WASI, Component Model, deployment</h3>
+<ul>
+<li>Bytecode Alliance, &quot;WASI 0.3 Launched&quot; (Jun 11, 2026) — https://bytecodealliance.org/articles/WASI-0.3 — <em>Core, Week 10.</em></li>
+<li>wasi.dev roadmap — https://wasi.dev/roadmap — <em>Core.</em></li>
+<li>Bytecode Alliance, &quot;The Road to Component Model 1.0&quot; (Jun 8, 2026) — https://bytecodealliance.org/articles/the-road-to-component-model-1-0 — <em>Core, Week 11.</em></li>
+<li>The WebAssembly Component Model book — https://component-model.bytecodealliance.org/ — <em>Core.</em></li>
+<li>Canonical ABI explainer — https://github.com/WebAssembly/component-model/blob/main/design/mvp/CanonicalABI.md.</li>
+<li>Luke Wagner, &quot;Towards a Component Model 1.0&quot;, Wasm I/O 2026 — https://2026.wasm.io/ (videos on the wasmio YouTube channel). <em>Core, Week 11.</em></li>
+<li>Menon &amp; Wagner, &quot;The WebAssembly Component Model&quot;, WAW @ POPL 2025 — https://popl25.sigplan.org/details/waw-2025-papers/4/The-WebAssembly-Component-Model.</li>
+<li>Lin Clark, &quot;Standardizing WASI&quot; (2019) — https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/ — <em>Historical.</em></li>
+<li>Danilo Chiarlone, <em>Server-Side WebAssembly</em> (Manning, Dec 2025) — https://www.manning.com/books/server-side-webassembly — <em>Core, Week 12.</em></li>
+<li>Akamai, Fermyon acquisition press release (Dec 1, 2025) — https://www.akamai.com/newsroom/press-release/akamai-announces-acquisition-of-function-as-a-service-company-fermyon.</li>
+<li>Spin blog (4.0, Jun 15, 2026; 4.1, Aug 26, 2026) — https://spinframework.dev/blog/index.</li>
+<li>Microsoft, &quot;Hyperlight Wasm&quot; (Mar 2025) — https://opensource.microsoft.com/blog/2025/03/26/hyperlight-wasm-fast-secure-and-os-free/.</li>
+<li>Microsoft, &quot;docfind&quot; (Jan 2026) — https://code.visualstudio.com/blogs/2026/01/15/docfind.</li>
+<li>web.dev, Google Sheets WasmGC case study — https://web.dev/case-studies/google-sheets-wasmgc — <em>Core, Week 8.</em></li>
+</ul>
+<h3 id="ml-inference">ML inference</h3>
+<ul>
+<li>ONNX Runtime Web docs: large models — https://onnxruntime.ai/docs/tutorials/web/large-models.html ; env flags — https://onnxruntime.ai/docs/tutorials/web/env-flags-and-session-options.html ; WebGPU EP — https://onnxruntime.ai/docs/execution-providers/WebGPU-ExecutionProvider.html ; WebNN EP — https://onnxruntime.ai/docs/tutorials/web/ep-webnn.html. <em>Core, Week 12.</em></li>
+<li>wasi-nn — https://github.com/WebAssembly/wasi-nn ; Wasmtime crate — https://docs.rs/crate/wasmtime-wasi-nn/latest. <em>Core, Week 12.</em></li>
+<li>Hugging Face, &quot;Transformers.js v4&quot; (Feb 2026) — https://huggingface.co/blog/transformersjs-v4.</li>
+<li>Google, LiteRT.js — https://developers.googleblog.com/litertjs-googles-high-performance-web-ai-inference/.</li>
+<li>&quot;WebAssembly with wasi-nn for Edge ML Inference&quot;, ECSA 2025 — https://link.springer.com/chapter/10.1007/978-3-032-02138-0_23.</li>
+<li>W3C WebNN spec (CR Draft, Aug 2026) — https://www.w3.org/TR/webnn/.</li>
+</ul>
+<h3 id="process-and-governance">Process and governance</h3>
+<ul>
+<li>Proposals by phase — https://github.com/WebAssembly/proposals ; finished proposals — https://github.com/WebAssembly/proposals/blob/main/finished-proposals.md. <em>Core, Week 13.</em></li>
+<li>Meetings and process — https://github.com/WebAssembly/meetings (phases doc under <code>process/</code>; notes under <code>main/&lt;year&gt;/</code>). <em>Core, Week 13.</em></li>
+<li>W3C WebAssembly WG charter (2026) — https://www.w3.org/2026/06/webassembly-wg.html. <em>Core, Week 13.</em></li>
+<li>W3C CG page — https://www.w3.org/groups/cg/webassembly/.</li>
+<li>webassembly.org news — https://webassembly.org/news/ (3.0 announcement; SpecTec adoption; &quot;The States of WebAssembly&quot;, Jan 2026).</li>
+</ul>
+<hr />
+<h2 id="gaps">11. Known gaps and unverified items (as of 2026-09-04)</h2>
+<ul>
+<li>Outcomes of the Aug 4–5, 2026 Princeton CG votes (Compact Import Section and Wide Arithmetic to Phase 4; FP16 to Phase 2) are inferred from the README and a Firefox bug; the meeting notes were not yet published.</li>
+<li>Chrome's exnref exception-handling milestone (137) comes from webassembly.org/features only.</li>
+<li>Safari 27.0 final contents (memory64? multi-memory?) are unknown until it ships; STP 250–251 have them.</li>
+<li>Custom Descriptors: V8 prototype status not confirmed.</li>
+<li>Dates for ESM Integration Phase 3, Compilation Hints Phase 2, and the Phase 1 dates of Type Imports, stringref, JIT Interface, Component Model, and Shared-Everything Threads were not located.</li>
+<li>No 2025–2026 top-venue paper was found on Shared-Everything Threads, the Component Model, or WasmGC semantics; Watt (Queue 2025) and the Wagner talks are the best substitutes.</li>
+<li>No peer-reviewed browser-Wasm-vs-native inference paper from 2024–2026 was found; the ECSA 2025 wasi-nn paper and vendor docs stand in.</li>
+<li>wasip3 support in TinyGo and host-side WASI 0.3 linking from wasmtime-py were not confirmed.</li>
+<li>Milestones before 2019 in §3 (asm.js 2013, the 2015 announcement, March 2017 MVP shipping, the Aug 2017 WG formation) are from general knowledge and were not re-verified on 2026-09-04.</li>
+</ul>
+<hr />
+<h2 id="sources">12. Sources consulted for this edition</h2>
+<p>Primary: webassembly.org (news, features, specs); webassembly.github.io/spec; github.com/WebAssembly/proposals, /meetings, /testsuite, /stack-switching, /shared-everything-threads, /wide-arithmetic, /wasi-nn; w3.org (WG charter 2026, TR/wasm-core-2, WebNN); bytecodealliance.org (WASI 0.3, Road to CM 1.0, WAMR announcement, projects); wasi.dev/roadmap; docs.wasmtime.dev and Wasmtime RELEASES.md (46, 47, 48); webkit.org blog (Safari 18.2, 18.4, 26.0, 26.2, 26.6, 27 beta; STP 250, 251); chromestatus.com; developer.chrome.com release notes (133, 137); bugzilla.mozilla.org (JSPI, compact imports, ESM); spidermonkey.dev; v8.dev; github.com/v8/v8 docs; firefox-source-docs; WebKit OptionsList.h; component-model.bytecodealliance.org; docs.rs (wasmtime-wasi-nn, cargo-component, wac-cli, wit-bindgen, hyperlight-wasm, containerd-shim-wasm); PyPI (wasmtime, componentize-py, extism); pyodide.org; peps.python.org (PEP 11, 776, 783); doc.rust-lang.org platform support; rust-lang compiler-team issue 1001; go.dev release notes (1.26, 1.27); kotlinlang.org; ziglang.org; graalvm.org; teavm.org; swift.org; docs.flutter.dev; emscripten ChangeLog; wasi-sdk releases; binaryen and wabt releases; onnxruntime.ai docs and releases; huggingface.co blog; developers.googleblog.com; wllama; developers.google.com (MediaPipe); almanac.httparchive.org 2025; akamai.com newsroom; spinframework.dev; cncf.io; wasmcloud.com; wasmer.io; developers.cloudflare.com; fastly.com docs; docs.docker.com; code.visualstudio.com; web.dev; shopify.dev; dl.acm.org, usenix.org, ndss-symposium.org, ieeexplore.ieee.org, link.springer.com, arxiv.org, mdpi.com, sciencedirect.com (paper records); wasmgroundup.com; hacks.mozilla.org; training.linuxfoundation.org; developer.mozilla.org; manning.com; nostarch.com; oreilly.com; pragprog.com; 2026.wasm.io; events.linuxfoundation.org.</p>
+<p>Secondary (used for orientation only, not for facts in the tables): platform.uno &quot;State of WebAssembly 2025–2026&quot;; 00f.net 2026 runtime benchmark; sitepoint.com WebGPU vs Wasm article.</p>
+
+<p class="foot">Built from the Markdown source on 2026-09-04. The proposal tracker and status tables go stale fastest; the watchlist in §9 says where to re-check. Week completion is stored only in this browser.</p>
+</main>
+<script>
+(function(){
+  var KEY='fourteen-weeks-of-wasm:done';
+  var done={};
+  try{ done=JSON.parse(localStorage.getItem(KEY)||'{}')||{}; }catch(e){ done={}; }
+  var weeks=document.querySelectorAll('section.week');
+  var prog=document.getElementById('prog');
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(done)); }catch(e){} }
+  function paint(){
+    var n=0;
+    weeks.forEach(function(s){
+      var id=s.id.replace('week-','');
+      var on=!!done[id]; if(on) n++;
+      var g=document.querySelector('.g[data-week="'+id+'"]'); if(g) g.classList.toggle('is-done',on);
+      var cb=s.querySelector('.done input'); if(cb) cb.checked=on;
+    });
+    if(prog) prog.textContent=n+' / '+weeks.length+' weeks done';
+  }
+  weeks.forEach(function(s){
+    var id=s.id.replace('week-','');
+    var head=s.querySelector('.week-head'); if(!head) return;
+    var lab=document.createElement('label'); lab.className='done';
+    var cb=document.createElement('input'); cb.type='checkbox';
+    cb.addEventListener('change',function(){ if(cb.checked) done[id]=true; else delete done[id]; save(); paint(); });
+    lab.appendChild(cb); lab.appendChild(document.createTextNode('mark week done'));
+    head.appendChild(lab);
+  });
+  paint();
+})();
+</script>
+
+
+<script>(function(){if(document.getElementById('__ioshtmlviewer_back'))return;var a=document.createElement('a');a.id='__ioshtmlviewer_back';a.href=new URL('../',location.href).href;a.setAttribute('aria-label','Back to iOS HTML Viewer');a.textContent='\u2039';a.style.cssText='position:absolute;left:10px;top:calc(8px + env(safe-area-inset-top,0px));width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font:600 17px/27px -apple-system,Arial,sans-serif;text-align:center;text-decoration:none;z-index:2147483647;opacity:.5';a.addEventListener('touchstart',function(){a.style.opacity='1';},{passive:true});a.addEventListener('mouseenter',function(){a.style.opacity='1';});a.addEventListener('mouseleave',function(){a.style.opacity='.5';});function add(){if(document.body)document.body.appendChild(a);}if(document.body)add();else document.addEventListener('DOMContentLoaded',add);})();</script>
+</body>
+</html>
