@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSS: a slot map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDEAE2; --panel:#F6F4EE; --sunk:#E4E0D5;
+  --ink:#24262A; --ink2:#5D6167; --ink3:#8B8E93;
+  --rule:#CBC5B7; --rule2:#DDD8CB;
+  --accent:#3C5A72; --accent-bg:#DCE4EA;
+  --t1:#3C5A72; --t2:#6D8AA0; --t3:#A0B4C2; --t4:#C9D2D9; --t0:transparent;
+  --t1f:#FFFFFF; --t2f:#FFFFFF; --t3f:#1E2C36; --t4f:#1E2C36; --t0f:#5D6167;
+  --sans:"Archivo Narrow","Helvetica Neue",Arial,sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#191A1C; --panel:#212325; --sunk:#141517;
+    --ink:#E4E2DA; --ink2:#A4A29A; --ink3:#7B7A74;
+    --rule:#37393C; --rule2:#2B2D30;
+    --accent:#93B6CF; --accent-bg:#233038;
+    --t1:#93B6CF; --t2:#5E7C92; --t3:#41565F; --t4:#333E45; --t0:transparent;
+    --t1f:#121D24; --t2f:#EAF1F5; --t3f:#DCE6EB; --t4f:#C3CDD4; --t0f:#A4A29A;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#191A1C; --panel:#212325; --sunk:#141517;
+  --ink:#E4E2DA; --ink2:#A4A29A; --ink3:#7B7A74;
+  --rule:#37393C; --rule2:#2B2D30;
+  --accent:#93B6CF; --accent-bg:#233038;
+  --t1:#93B6CF; --t2:#5E7C92; --t3:#41565F; --t4:#333E45; --t0:transparent;
+  --t1f:#121D24; --t2f:#EAF1F5; --t3f:#DCE6EB; --t4f:#C3CDD4; --t0f:#A4A29A;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--serif); font-size:17px; line-height:1.62;
+  font-variant-numeric:oldstyle-nums;
+}
+img{max-width:100%}
+a{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--rule)}
+a:hover{border-bottom-color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px}
+
+.sheet{max-width:1180px; margin:0 auto; padding:0 24px 96px}
+
+/* title block */
+.block{border-bottom:2px solid var(--ink); padding:56px 0 18px; margin-bottom:8px}
+.block h1{
+  font-family:var(--sans); font-weight:600; font-size:clamp(34px,6.5vw,58px);
+  line-height:1.02; margin:0 0 14px; letter-spacing:-0.012em;
+}
+.block p{margin:0; max-width:62ch; color:var(--ink2); font-size:19px}
+.stamp{
+  display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 0 0;
+  font-family:var(--sans); font-size:14px; color:var(--ink3); line-height:1.5;
+}
+.stamp b{font-weight:500; color:var(--ink2)}
+
+/* two-column shell */
+.shell{display:block}
+.rail{display:none}
+@media (min-width:1060px){
+  .shell{display:grid; grid-template-columns:200px minmax(0,1fr); gap:56px; align-items:start}
+  .rail{display:block; position:sticky; top:32px; padding-top:44px}
+  .rail ol{list-style:none; margin:0; padding:0; font-family:var(--sans); font-size:14.5px; line-height:1.45}
+  .rail li{margin:0 0 9px}
+  .rail a{color:var(--ink2); border:0; display:block}
+  .rail a:hover{color:var(--accent)}
+  .rail .grp{color:var(--ink3); margin-top:20px; font-size:13px}
+}
+main{min-width:0}
+
+section{padding-top:44px}
+h2{
+  font-family:var(--sans); font-weight:600; font-size:27px; line-height:1.15;
+  margin:0 0 4px; letter-spacing:-0.005em;
+}
+h2 .n{color:var(--ink3); font-weight:400; margin-right:10px; font-variant-numeric:tabular-nums}
+h3{font-family:var(--sans); font-weight:500; font-size:19px; margin:32px 0 6px}
+.lede{color:var(--ink2); max-width:66ch; margin:0 0 22px; font-size:17px}
+p{max-width:66ch; margin:0 0 16px}
+.q{
+  font-family:var(--sans); font-size:20px; color:var(--accent);
+  margin:0 0 18px; max-width:60ch;
+}
+
+/* figure: the map */
+figure{margin:28px 0 8px}
+figcaption{font-family:var(--sans); font-size:14px; color:var(--ink3); margin-top:12px; max-width:62ch}
+.map{display:grid; grid-template-columns:minmax(0,1fr) 220px; gap:14px}
+@media (max-width:760px){.map{grid-template-columns:minmax(0,1fr)}}
+.stages{display:grid; gap:6px}
+.stage{
+  background:var(--panel); border:1px solid var(--rule2); border-left:3px solid var(--accent);
+  border-radius:0; padding:11px 16px;
+}
+.stage b{font-family:var(--sans); font-weight:600; font-size:16px; display:block}
+.stage span{font-family:var(--sans); font-size:14px; color:var(--ink2)}
+.cross{
+  background:var(--sunk); border:1px solid var(--rule2); padding:14px 16px;
+  font-family:var(--sans); font-size:14.5px; color:var(--ink2);
+}
+.cross b{display:block; font-weight:600; font-size:16px; color:var(--ink); margin-bottom:10px}
+.cross ul{margin:0; padding:0; list-style:none}
+.cross li{margin:0 0 7px}
+.base{
+  margin-top:14px; background:var(--panel); border:1px solid var(--rule2);
+  border-left:3px solid var(--ink3); padding:11px 16px;
+}
+.base b{font-family:var(--sans); font-weight:600; font-size:16px; display:block}
+.base span{font-family:var(--sans); font-size:14px; color:var(--ink2)}
+
+/* value chain */
+.chain{display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-family:var(--sans); font-size:14.5px}
+.chain i{font-style:normal; background:var(--accent-bg); color:var(--ink); padding:5px 11px; border-radius:3px}
+.chain em{font-style:normal; color:var(--ink3)}
+
+/* tables */
+.scroll{overflow-x:auto; margin:18px 0 8px; -webkit-overflow-scrolling:touch}
+table{border-collapse:collapse; width:100%; min-width:560px; font-size:16px}
+th{
+  font-family:var(--sans); font-weight:600; font-size:14px; color:var(--ink2);
+  text-align:left; padding:0 16px 8px 0; border-bottom:1.5px solid var(--ink);
+  white-space:nowrap;
+}
+th:last-child,td:last-child{padding-right:0; text-align:right; white-space:nowrap}
+td{padding:12px 16px 12px 0; border-bottom:1px solid var(--rule2); vertical-align:top}
+tr:last-child td{border-bottom:1px solid var(--rule)}
+td.m{width:31%; min-width:190px}
+td.m b{font-family:var(--sans); font-weight:600; font-size:16.5px; display:block; line-height:1.3}
+td.m code{
+  font-family:var(--mono); font-size:12.5px; color:var(--ink2);
+  display:block; margin-top:3px; letter-spacing:-0.01em;
+}
+td.m code.d{color:var(--ink3)}
+td.a{color:var(--ink)}
+td.a small{display:block; color:var(--ink3); font-size:14px; margin-top:3px; font-family:var(--sans)}
+.chip{
+  display:inline-block; font-family:var(--sans); font-weight:500; font-size:12.5px;
+  padding:2px 9px; border-radius:10px; line-height:1.55; min-width:26px; text-align:center;
+}
+.c1{background:var(--t1); color:var(--t1f)}
+.c2{background:var(--t2); color:var(--t2f)}
+.c3{background:var(--t3); color:var(--t3f)}
+.c4{background:var(--t4); color:var(--t4f)}
+.c0{background:transparent; color:var(--t0f); border:1px solid var(--rule)}
+
+/* rules list */
+dl{margin:20px 0 0; max-width:70ch}
+dt{font-family:var(--sans); font-weight:600; font-size:18px; margin:24px 0 4px}
+dd{margin:0; color:var(--ink2)}
+ul.plain{max-width:66ch; padding-left:20px; margin:0 0 16px}
+ul.plain li{margin:0 0 9px}
+code{font-family:var(--mono); font-size:0.87em; background:var(--sunk); padding:1px 5px; border-radius:3px}
+td code,.rail code{background:transparent; padding:0}
+.legend{display:flex; flex-wrap:wrap; gap:8px 20px; font-family:var(--sans); font-size:14.5px; color:var(--ink2); margin:18px 0 6px}
+.legend span{display:flex; align-items:center; gap:8px}
+hr{border:0; border-top:1px solid var(--rule); margin:52px 0 0}
+.end{font-family:var(--sans); font-size:14px; color:var(--ink3); padding-top:20px; max-width:62ch}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<header class="block">
+  <h1>CSS: a slot map</h1>
+  <p>The CSS standard is not a list of documents. It is a fixed set of questions asked in a fixed order, and each module is the current answer to one of them. Learn the questions and the documents stop mattering.</p>
+  <div class="stamp">
+    <span><b>Drawn against</b> CSS Snapshot 2026, 22 June 2026</span>
+    <span><b>Cross-checked</b> CSSWG spec index, 17 July 2026</span>
+    <span><b>Slots</b> 7 stages, 1 substrate, 5 frames</span>
+  </div>
+</header>
+
+<div class="shell">
+<nav class="rail" aria-label="Contents">
+  <ol>
+    <li><a href="#idea">The one idea</a></li>
+    <li><a href="#map">The map</a></li>
+    <li><a href="#rules">Five rules that keep it stable</a></li>
+    <li class="grp">Slots</li>
+    <li><a href="#substrate">0 &nbsp;Substrate</a></li>
+    <li><a href="#filter">1 &nbsp;Filter</a></li>
+    <li><a href="#match">2 &nbsp;Match</a></li>
+    <li><a href="#cascade">3 &nbsp;Cascade</a></li>
+    <li><a href="#boxes">4 &nbsp;Generate boxes</a></li>
+    <li><a href="#layout">5 &nbsp;Lay out</a></li>
+    <li><a href="#paint">6 &nbsp;Paint</a></li>
+    <li><a href="#animate">7 &nbsp;Animate</a></li>
+    <li><a href="#frames">Cross-cutting frames</a></li>
+    <li class="grp">Reading the map</li>
+    <li><a href="#tiers">The maturity axis</a></li>
+    <li><a href="#gaps">Empty slots and dead ends</a></li>
+    <li><a href="#update">Updating the map</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="idea">
+  <h2>The one idea</h2>
+  <p class="lede">CSS2.1 was one document with a table of contents. Everything since is that table of contents, broken into pieces that version independently.</p>
+  <p>A browser has to do seven things with a stylesheet, in order. Decide which rules are active. Find the elements each rule hits. Resolve conflicts into one value per property per element. Build boxes. Position and size them. Paint them. Change them over time. That sequence has not moved since 1998 and will not move.</p>
+  <p>Every CSS module answers a question inside one of those seven stages, or it defines the substrate all seven share. Nothing else exists. When a new module appears, you do not learn a new structure — you ask which stage's question it answers and drop it in.</p>
+  <p>This is why the W3C page you were reading is disorienting. It sorts by how confident the Working Group is, not by what each module does. Grid 1 and Grid 2 land in a different section from Flexbox. Selectors 3 is in the official definition and Selectors 4 is two tiers down. None of that is structural.</p>
+</section>
+
+<section id="map">
+  <h2>The map</h2>
+  <figure>
+    <div class="map">
+      <div class="stages">
+        <div class="stage"><b>1 &nbsp;Filter</b><span>Which rules are active at all?</span></div>
+        <div class="stage"><b>2 &nbsp;Match</b><span>Which elements does each rule hit?</span></div>
+        <div class="stage"><b>3 &nbsp;Cascade</b><span>Which declaration wins, and what value results?</span></div>
+        <div class="stage"><b>4 &nbsp;Generate boxes</b><span>What boxes exist, from what elements?</span></div>
+        <div class="stage"><b>5 &nbsp;Lay out</b><span>Where does each box go, and how big is it?</span></div>
+        <div class="stage"><b>6 &nbsp;Paint</b><span>What does each box look like?</span></div>
+        <div class="stage"><b>7 &nbsp;Animate</b><span>How does any of this change over time?</span></div>
+      </div>
+      <aside class="cross">
+        <b>Cross-cutting frames</b>
+        <ul>
+          <li>Writing modes</li>
+          <li>Logical properties</li>
+          <li>Environment queries</li>
+          <li>CSSOM and scripting</li>
+          <li>Houdini worklets</li>
+          <li>Containment</li>
+        </ul>
+      </aside>
+    </div>
+    <div class="base"><b>0 &nbsp;Substrate</b><span>Syntax, values and units, custom properties, style attributes — the language every stage is written in.</span></div>
+    <figcaption>Stages run top to bottom. The frames on the right are not a stage; each one re-keys several stages at once. The substrate sits under all of it.</figcaption>
+  </figure>
+</section>
+
+<section id="rules">
+  <h2>Five rules that keep it stable</h2>
+  <p class="lede">These are the load-bearing parts. If you hold these, a new spec release costs you one line of revision, not a rebuild.</p>
+  <dl>
+    <dt>A slot is a question, not a document</dt>
+    <dd>&ldquo;How do I select elements?&rdquo; is the slot. Selectors 3 was the answer, Selectors 4 is the answer, Selectors 5 will be the answer. The slot never moves, so nothing you learned about it gets invalidated — only the pointer updates.</dd>
+
+    <dt>Levels are per-module and monotonic</dt>
+    <dd>There is no CSS4. Each module levels independently, and a higher level is a superset of the lower one with narrower permitted behaviour. So Grid 1 and Grid 2 are one slot, not two. Read the highest published level, and fall back to the lower level only for what the higher one did not touch.</dd>
+
+    <dt>Maturity is an attribute of the answer, never a location</dt>
+    <dd>The four sections of the Snapshot are a confidence rating. Treat them as a column in a table, not a branch in a hierarchy. A module moving from &ldquo;rough interoperability&rdquo; to &ldquo;official definition&rdquo; changes one chip and nothing else.</dd>
+
+    <dt>CSS2.1 is the root of the tree</dt>
+    <dd>Every module either replaces a named CSS2.1 chapter or fills a slot CSS2.1 never had. The Snapshot annotates this explicitly, module by module. That gives you a free exhaustiveness check: walk the CSS2.1 table of contents and confirm each chapter has a successor or an explicit gap.</dd>
+
+    <dt>New work arrives in only four shapes</dt>
+    <dd>A level bump, a split, a merge, or a genuinely new slot. All four are cheap edits. The <a href="#update">last section</a> is the procedure.</dd>
+  </dl>
+</section>
+
+<section id="substrate">
+  <h2><span class="n">0</span>Substrate</h2>
+  <p class="q">What is a stylesheet made of, before any element is involved?</p>
+  <p>This layer is invisible in day-to-day authoring and load-bearing for everything else. Syntax defines the tokenizer and the forward-compatible error rules — the reason an unknown property is dropped rather than breaking the block. Values and Units defines the notation the other sixty specs are written in.</p>
+  <div class="legend">
+    <span><i class="chip c1">I</i> Official definition</span>
+    <span><i class="chip c2">II</i> Reliable CR</span>
+    <span><i class="chip c3">III</i> Fairly stable</span>
+    <span><i class="chip c4">IV</i> Rough interop</span>
+    <span><i class="chip c0">&mdash;</i> Draft, not in Snapshot</span>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr><th>Module</th><th>What it settles</th><th>Tier</th></tr></thead>
+    <tbody>
+      <tr><td class="m"><b>Syntax</b><code>css-syntax-3</code></td><td class="a">Tokenizing and parsing; forward-compatible error handling.<small>Replaces CSS2.1 §4.1, §4.2, §4.4, Appendix G</small></td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Values and Units</b><code>css-values-3</code><code class="d">L4, L5 in draft</code></td><td class="a">The shared value vocabulary — lengths, percentages, <code>calc()</code> — and the property-definition syntax every other spec uses.<small>Replaces CSS2.1 §4.3, §1.4.2.1, §A.2.1–3</small></td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Custom Properties</b><code>css-variables-1</code></td><td class="a">A value type every property accepts: <code>--x</code> and <code>var()</code>. Substitution happens during the cascade.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Style Attributes</b><code>css-style-attr</code></td><td class="a">How a declaration block rides inside a markup attribute.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Namespaces</b><code>css-namespaces-3</code></td><td class="a"><code>@namespace</code>, for namespace-prefixed selectors in XML vocabularies.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Environment Variables</b><code>css-env-1</code></td><td class="a"><code>env()</code> and safe-area insets — values the user agent supplies.<small>Cleared for broad release pre-CR</small></td><td><span class="chip c0">&mdash;</span></td></tr>
+      <tr><td class="m"><b>Functions and Mixins</b><code>css-mixins-1</code></td><td class="a"><code>@function</code> — a parameterised, stylesheet-global counterpart to custom properties.</td><td><span class="chip c0">&mdash;</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="filter">
+  <h2><span class="n">1</span>Filter</h2>
+  <p class="q">Which rules are in play at all, before any element is examined?</p>
+  <p>Everything here is a predicate about the environment rather than the document. Two things worth noticing. Container queries are the newest slot in the whole map and they are not in the Snapshot yet, because they live in Containment Level 3. And <code>@supports</code> is the only mechanism CSS has for asking about itself.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Module</th><th>What it settles</th><th>Tier</th></tr></thead>
+    <tbody>
+      <tr><td class="m"><b>Media Queries</b><code>mediaqueries-4</code><code class="d">L5 in draft</code></td><td class="a">Does this rule apply, given the device, viewport, or user preference? Level 4 deprecated most media types in favour of features.<small>Replaces CSS2.1 §7.3</small></td><td><span class="chip c2">II</span></td></tr>
+      <tr><td class="m"><b>Conditional Rules</b><code>css-conditional-4</code><code class="d">L5 in draft</code></td><td class="a"><code>@supports</code>, support queries for selectors, nested <code>@media</code>. Level 5 adds <code>@else</code> and font-tech queries.<small>Supersedes CSS2.1 §7.2</small></td><td><span class="chip c2">II</span></td></tr>
+      <tr><td class="m"><b>Containment L3</b><code>css-contain-3</code></td><td class="a"><code>@container</code> — condition on an ancestor's size or style instead of the viewport.</td><td><span class="chip c0">&mdash;</span></td></tr>
+      <tr><td class="m"><b>Color Adjustment</b><code>css-color-adjust-1</code></td><td class="a"><code>color-scheme</code>, and how a page responds to a user-forced palette. Straddles filter and paint.</td><td><span class="chip c2">II</span></td></tr>
+      <tr><td class="m"><b>Viewport</b><code>css-viewport-1</code></td><td class="a">What the initial containing block is on a given device, and how the meta viewport tag affects it.</td><td><span class="chip c0">&mdash;</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="match">
+  <h2><span class="n">2</span>Match</h2>
+  <p class="q">Given an active rule, which elements does it apply to?</p>
+  <p>Selectors is the whole slot; the rest are extensions to it. Pseudo-elements are worth separating in your head, because they straddle two stages: Selectors defines how you write <code>::marker</code>, and Pseudo-Elements defines what box it actually generates back in stage 4.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Module</th><th>What it settles</th><th>Tier</th></tr></thead>
+    <tbody>
+      <tr><td class="m"><b>Selectors</b><code>selectors-4</code><code class="d">L3 is Tier I; L5 in draft</code></td><td class="a">Which elements a rule targets. Level 4 adds <code>:is()</code>, <code>:where()</code>, <code>:has()</code>, and much more.<small>Replaces CSS2.1 §5, §6.4.3</small></td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Nesting</b><code>css-nesting-1</code></td><td class="a">A rule written inside another, with its selector relative to the parent's.</td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Pseudo-Elements</b><code>css-pseudo-4</code></td><td class="a"><code>::first-line</code>, <code>::selection</code>, <code>::marker</code>, <code>::placeholder</code> — parts that are rendered but are not elements.</td><td><span class="chip c0">&mdash;</span></td></tr>
+      <tr><td class="m"><b>Scoping &amp; Shadow Parts</b><code>css-scoping-1</code><code>css-shadow-parts-1</code></td><td class="a">Selecting into and across shadow trees; <code>::part()</code>.</td><td><span class="chip c0">&mdash;</span></td></tr>
+      <tr><td class="m"><b>Custom Highlight API</b><code>css-highlight-api-1</code></td><td class="a"><code>::highlight()</code> — styling ranges a script named rather than markup the author wrote.</td><td><span class="chip c0">&mdash;</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="cascade">
+  <h2><span class="n">3</span>Cascade</h2>
+  <p class="q">Several rules matched. Which declaration wins, and what value does the property actually end up with?</p>
+  <p>This is the narrowest stage by document count and the deepest by consequence. One module owns nearly all of it. Its real content is a pipeline inside a pipeline — a value passes through six named states, and most confusion about CSS behaviour is confusion about which state you are looking at.</p>
+  <figure>
+    <div class="chain">
+      <i>declared</i><em>&rsaquo;</em><i>cascaded</i><em>&rsaquo;</em><i>specified</i><em>&rsaquo;</em><i>computed</i><em>&rsaquo;</em><i>used</i><em>&rsaquo;</em><i>actual</i>
+    </div>
+    <figcaption>Inheritance and <code>var()</code> substitution happen at computed value. Transitions interpolate computed values. Layout consumes used values. The device rounds to actual.</figcaption>
+  </figure>
+  <div class="scroll"><table>
+    <thead><tr><th>Module</th><th>What it settles</th><th>Tier</th></tr></thead>
+    <tbody>
+      <tr><td class="m"><b>Cascading and Inheritance</b><code>css-cascade-5</code><code class="d">L4 is Tier I; L6 in draft</code></td><td class="a">Origins, importance, specificity resolution, inheritance, and the value chain above. Level 5 adds cascade layers; Level 6 adds <code>@scope</code>.<small>Supersedes CSS2.1 §1.4.3, §6</small></td><td><span class="chip c2">II</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="boxes">
+  <h2><span class="n">4</span>Generate boxes</h2>
+  <p class="q">Computed values are settled. What boxes now exist, and from which elements?</p>
+  <p>The box tree is not the element tree. One element can produce several boxes, or none, or boxes it has no markup for. Display owns that transformation, and it is the stage most authors skip past — which is why <code>display</code> behaving as a shorthand for an outer and an inner value comes as a surprise.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Module</th><th>What it settles</th><th>Tier</th></tr></thead>
+    <tbody>
+      <tr><td class="m"><b>Display</b><code>css-display-3</code><code class="d">L4 in draft</code></td><td class="a">How the box tree is generated from the element tree; <code>display</code> as an outer and inner pair. Level 4 adds <code>reading-flow</code>.<small>Replaces CSS2.1 §9.1.2, §9.2.1–9.2.4</small></td><td><span class="chip c3">III</span></td></tr>
+      <tr><td class="m"><b>Lists and Counters</b><code>css-lists-3</code></td><td class="a">Counters, marker boxes, and how a marker's value is computed.</td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Counter Styles</b><code>css-counter-styles-3</code></td><td class="a"><code>@counter-style</code>, plus the predefined numbering systems.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Generated Content</b><code>css-content-3</code></td><td class="a"><code>::before</code> and <code>::after</code> content. The draft is stalled; CSS2.1 §12 is still the working definition.</td><td><span class="chip c0">&mdash;</span></td></tr>
+      <tr><td class="m"><b>Containment</b><code>css-contain-1</code><code>css-contain-2</code></td><td class="a"><code>contain</code> and <code>content-visibility</code> — fencing a subtree so its layout, paint, and style cannot escape.</td><td><span class="chip c1">I</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="layout">
+  <h2><span class="n">5</span>Lay out</h2>
+  <p class="q">Where does each box sit, and how big is it?</p>
+  <p>The largest stage, and the one worth splitting in two. Geometry modules define terms and constraints that every layout algorithm shares. Layout modes are the algorithms themselves. Box Alignment is the clearest illustration: <code>justify-content</code> is defined once, in one module, and flex, grid, block, and table layout all consume that single definition.</p>
+
+  <h3>5a &nbsp;Geometry and constraints</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Module</th><th>What it settles</th><th>Tier</th></tr></thead>
+    <tbody>
+      <tr><td class="m"><b>Box Model</b><code>css-box-3</code><code class="d">L4 in draft</code></td><td class="a">Content, padding, border, and margin areas.<small>Replaces CSS2.1 §8.1–8.4</small></td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Box Sizing</b><code>css-sizing-3</code><code class="d">L4 in draft</code></td><td class="a">How <code>width</code> and <code>height</code> resolve; <code>min-content</code>, <code>max-content</code>, <code>fit-content</code>, <code>aspect-ratio</code>.<small>Overlays and extends CSS2.1 §10</small></td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Box Alignment</b><code>css-align-3</code></td><td class="a"><code>justify-*</code>, <code>align-*</code>, and <code>gap</code>, defined once for every layout mode.</td><td><span class="chip c3">III</span></td></tr>
+      <tr><td class="m"><b>Positioned Layout</b><code>css-position-3</code><code class="d">L4 in draft</code></td><td class="a">Relative, absolute, fixed, and sticky positioning; <code>z-index</code>. Level 4 adds top-layer and <code>::backdrop</code>.</td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Anchor Positioning</b><code>css-anchor-position-1</code></td><td class="a">Position an absolutely positioned box against an arbitrary anchor element, with fallback positions.</td><td><span class="chip c0">&mdash;</span></td></tr>
+      <tr><td class="m"><b>Overflow</b><code>css-overflow-3</code><code class="d">L4, L5 in draft</code></td><td class="a"><code>overflow</code>, scroll container semantics, <code>text-overflow</code>.</td><td><span class="chip c0">&mdash;</span></td></tr>
+      <tr><td class="m"><b>Fragmentation</b><code>css-break-3</code><code class="d">L4 in draft</code></td><td class="a">Breaking one flow across pages, columns, or regions, and the properties that force or avoid breaks.<small>Replaces CSS2.1 §13.3</small></td><td><span class="chip c3">III</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>5b &nbsp;Layout modes</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Module</th><th>What it settles</th><th>Tier</th></tr></thead>
+    <tbody>
+      <tr><td class="m"><b>Block and inline flow</b><code>CSS2.1 §9, §10</code><code class="d">css-inline-3 in draft</code></td><td class="a">Normal flow — the default, and still the only layout mode with no modern module of its own. Inline Layout covers line boxes, baselines, and <code>text-box-trim</code>.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Floats and Shapes</b><code>CSS2.1 §9.5</code><code>css-shapes-1</code></td><td class="a">Wrapping content beside a box, including non-rectangular wrap contours.</td><td><span class="chip c3">III</span></td></tr>
+      <tr><td class="m"><b>Table layout</b><code>CSS2.1 §17</code></td><td class="a">Table box generation and row/column sizing. <code>css-tables-3</code> has stalled, so CSS2.1 remains the definition.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Flexible Box</b><code>css-flexbox-1</code></td><td class="a">One-dimensional distribution of space along a main axis.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Grid</b><code>css-grid-2</code><code class="d">L1 also Tier II; L3 in draft</code></td><td class="a">Two-dimensional placement on a defined grid. Level 2 adds subgrid; Level 3 adds masonry-style lanes.</td><td><span class="chip c2">II</span></td></tr>
+      <tr><td class="m"><b>Multi-column</b><code>css-multicol-1</code><code class="d">L2 in draft</code></td><td class="a">Flowing one continuous stream into several columns.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Paged media</b><code>css-page-3</code><code>css-gcpm-3</code></td><td class="a"><code>@page</code>, margin boxes, running headers, footnotes, cross-references.</td><td><span class="chip c0">&mdash;</span></td></tr>
+      <tr><td class="m"><b>Gap Decorations</b><code>css-gaps-1</code></td><td class="a">Drawing rules inside the gaps of a flex or grid container.</td><td><span class="chip c0">&mdash;</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="paint">
+  <h2><span class="n">6</span>Paint</h2>
+  <p class="q">Geometry is settled. What actually gets drawn, and in what order?</p>
+  <p>The widest stage by module count, and the easiest to navigate, because the modules carve up cleanly by what they draw. One thing to keep straight: Text belongs here rather than in layout, even though line breaking clearly affects geometry. The Working Group split the old CSS2.1 text chapter four ways — Text, Writing Modes, Text Decoration, and Line Grid — and only the first three are live.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Module</th><th>What it settles</th><th>Tier</th></tr></thead>
+    <tbody>
+      <tr><td class="m"><b>Color</b><code>css-color-4</code><code class="d">L5 Tier IV; HDR in draft</code></td><td class="a">Color spaces beyond sRGB, every color notation, <code>opacity</code>. Level 5 adds <code>color-mix()</code> and relative color syntax.<small>Replaces CSS2.1 §4.3.6, §14.1, §18.2</small></td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Backgrounds and Borders</b><code>css-backgrounds-3</code><code class="d">L4 and Borders L4 in draft</code></td><td class="a">Layered backgrounds, border images, corner radii, box shadows.<small>Replaces CSS2.1 §8.5, §14.2</small></td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Images</b><code>css-images-3</code><code class="d">L4 in draft</code></td><td class="a">The <code>&lt;image&gt;</code> value type, native gradients, and sizing of replaced content.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Fonts</b><code>css-fonts-4</code><code class="d">L3 is Tier I; L5 in draft</code></td><td class="a">Font selection, <code>@font-face</code>, OpenType features, variable fonts, color fonts.<small>Replaces CSS2.1 §15</small></td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Font Loading</b><code>css-font-loading-3</code></td><td class="a">Script-driven font loading and the events around it.</td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Text</b><code>css-text-3</code><code class="d">L4 in draft</code></td><td class="a">Line breaking, white-space handling, justification, alignment, text transformation.<small>Replaces CSS2.1 §16 except §16.3</small></td><td><span class="chip c3">III</span></td></tr>
+      <tr><td class="m"><b>Text Decoration</b><code>css-text-decor-3</code><code class="d">L4 in draft</code></td><td class="a">Decoration lines, East Asian emphasis marks, <code>text-shadow</code>.<small>Replaces CSS2.1 §16.3</small></td><td><span class="chip c3">III</span></td></tr>
+      <tr><td class="m"><b>Basic User Interface</b><code>css-ui-3</code><code class="d">L4 in draft</code></td><td class="a"><code>cursor</code>, <code>outline</code>, <code>caret-color</code>, <code>accent-color</code>, <code>appearance</code>.<small>Replaces CSS2.1 §18.1, §18.4</small></td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Scrollbars</b><code>css-scrollbars-1</code></td><td class="a"><code>scrollbar-color</code> and <code>scrollbar-width</code>.</td><td><span class="chip c2">II</span></td></tr>
+      <tr><td class="m"><b>Transforms</b><code>css-transforms-1</code><code class="d">L2 Tier IV — 3D</code></td><td class="a">Coordinate transforms applied after layout, so they never move neighbours. Shared with SVG.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Masking</b><code>css-masking-1</code></td><td class="a"><code>clip-path</code> and <code>mask</code> — hiding part of what was drawn.<small>Replaces CSS2.1 §11.1.2</small></td><td><span class="chip c3">III</span></td></tr>
+      <tr><td class="m"><b>Filter Effects</b><code>filter-effects-1</code></td><td class="a"><code>filter</code> and <code>backdrop-filter</code> — processing a rendering before it composites.</td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Compositing and Blending</b><code>compositing-1</code></td><td class="a">How an element's rendering combines with what is behind it.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Speech</b><code>css-speech-1</code></td><td class="a">The non-visual counterpart: voice, pitch, pauses, cues.<small>Replaces CSS2.1 Appendix A</small></td><td><span class="chip c3">III</span></td></tr>
+      <tr><td class="m"><b>Paint order</b><code>CSS2.1 Appendix E</code></td><td class="a">Stacking contexts and what sits in front of what. Still has no module of its own.</td><td><span class="chip c1">I</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="animate">
+  <h2><span class="n">7</span>Animate</h2>
+  <p class="q">How does any of the above change over time, and what drives the clock?</p>
+  <p>The structure here is a single model with several drivers on top. Web Animations defines the timing model; Transitions and Animations are two declarative ways to feed it; Easing supplies the timing-function value type all of them share. Once you see that shape, the scroll modules stop looking like strays — they are alternative clocks.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Module</th><th>What it settles</th><th>Tier</th></tr></thead>
+    <tbody>
+      <tr><td class="m"><b>Web Animations</b><code>web-animations-1</code><code class="d">L2 in draft</code></td><td class="a">The timing and animation model underneath everything below, plus a script API onto it. Joint work with the SVG group.</td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Animations</b><code>css-animations-1</code><code class="d">L2 in draft</code></td><td class="a"><code>@keyframes</code> and the <code>animation-*</code> properties — an explicit timeline the author authors.<small>Cleared for broad release pre-CR</small></td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Transitions</b><code>css-transitions-1</code><code class="d">L2 in draft</code></td><td class="a">Interpolating when a computed value changes — a timeline triggered by state, not authored.<small>Cleared for broad release pre-CR</small></td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Easing Functions</b><code>css-easing-1</code><code class="d">L2 adds linear()</code></td><td class="a">The shared timing-function value type: cubic Bézier, steps, and friends.</td><td><span class="chip c1">I</span></td></tr>
+      <tr><td class="m"><b>Scroll-driven Animations</b><code>scroll-animations-1</code></td><td class="a">Scroll progress and element visibility as timelines, in place of the wall clock.</td><td><span class="chip c0">&mdash;</span></td></tr>
+      <tr><td class="m"><b>View Transitions</b><code>css-view-transitions-1</code><code class="d">L2 in draft</code></td><td class="a">Animating between two document states via generated pseudo-elements. Level 2 covers cross-document navigation.</td><td><span class="chip c3">III</span></td></tr>
+      <tr><td class="m"><b>Motion Path</b><code>motion-1</code></td><td class="a"><code>offset-path</code> and <code>offset-distance</code> — position along a trajectory, animatable.</td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Scroll Snap</b><code>css-scroll-snap-1</code><code class="d">L2 in draft</code></td><td class="a">Snap positions a scroll container settles onto.</td><td><span class="chip c2">II</span></td></tr>
+      <tr><td class="m"><b>Scroll Anchoring</b><code>css-scroll-anchoring-1</code></td><td class="a">Holding the visible scroll position when content above it changes size.</td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Overscroll Behavior</b><code>css-overscroll-1</code></td><td class="a">Whether scrolling past an inner container's limit chains to its parent.</td><td><span class="chip c0">&mdash;</span></td></tr>
+      <tr><td class="m"><b>Will Change</b><code>css-will-change-1</code></td><td class="a">A hint to the renderer. Renders nothing; changes no value.</td><td><span class="chip c4">IV</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="frames">
+  <h2>Cross-cutting frames</h2>
+  <p class="lede">These are the modules that break a purely staged model. Each one re-keys several stages at once, which is why filing them under a single stage always feels wrong.</p>
+  <p>Writing Modes is the sharpest example. It does not add a feature to one stage. It replaces the coordinate system that sizing, alignment, layout, fragmentation, and text all operate in — physical top and left become flow-relative block-start and inline-start. Logical Properties then supplies a flow-relative twin for every physical property CSS already had.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Frame</th><th>What it re-keys</th><th>Tier</th></tr></thead>
+    <tbody>
+      <tr><td class="m"><b>Writing Modes</b><code>css-writing-modes-4</code><code class="d">L3 is Tier I</code></td><td class="a">Direction, bidirectionality, and vertical text — and with them, every axis used by stages 4 through 6.<small>Replaces CSS2.1 §8.6, §9.10</small></td><td><span class="chip c3">III</span></td></tr>
+      <tr><td class="m"><b>Logical Properties</b><code>css-logical-1</code></td><td class="a">Flow-relative equivalents of the physical margin, padding, border, and sizing properties.<small>Partly cleared for broad release pre-CR</small></td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>CSSOM</b><code>cssom-1</code><code>cssom-view-1</code><code>geometry-1</code><code>resize-observer-1</code></td><td class="a">The scripted mirror of every stage: parsing and serializing rules, reading box geometry, observing size, manipulating the viewport. <code>css-typed-om-1</code> adds typed access.</td><td><span class="chip c4">IV</span></td></tr>
+      <tr><td class="m"><b>Houdini</b><code>css-paint-api-1</code><code>css-layout-api-1</code><code>css-properties-values-api-1</code><code>worklets-1</code></td><td class="a">Author code injected into the engine's own stages — a custom painter, a custom layout algorithm, a registered property with a real type.</td><td><span class="chip c0">&mdash;</span></td></tr>
+      <tr><td class="m"><b>SVG interop</b><code>fxtf-drafts</code></td><td class="a">Transforms, masking, filters, compositing, and motion are jointly owned with the SVG group. The same property definitions apply in both languages.</td><td><span class="chip c0">&mdash;</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="tiers">
+  <h2>The maturity axis</h2>
+  <p class="lede">The Snapshot's four sections, restated as one ordinal attribute you attach to a slot's current answer.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Tier</th><th>What it claims</th><th>Count</th></tr></thead>
+    <tbody>
+      <tr><td class="m"><b><span class="chip c1">I</span> &nbsp;Official definition</b></td><td class="a">Stable, and with enough implementation experience that the Working Group is sure of that stability. This is what &ldquo;CSS&rdquo; formally means in 2026.</td><td>24</td></tr>
+      <tr><td class="m"><b><span class="chip c2">II</span> &nbsp;Reliable CR</b></td><td class="a">Stable spec and stable implementations, held back by minor issues or missing implementation reports.</td><td>8</td></tr>
+      <tr><td class="m"><b><span class="chip c3">III</span> &nbsp;Fairly stable</b></td><td class="a">Design work finished, testing and implementation experience thin.</td><td>10</td></tr>
+      <tr><td class="m"><b><span class="chip c4">IV</span> &nbsp;Rough interoperability</b></td><td class="a">Widely shipped, imprecisely specified. Works in the common cases and diverges at the edges.</td><td>22</td></tr>
+      <tr><td class="m"><b><span class="chip c0">&mdash;</span> &nbsp;Not in the Snapshot</b></td><td class="a">Working Draft. May still be safe to use — the Snapshot maintains an explicit list of pre-CR features cleared for broad release, including <code>:has()</code>, <code>aspect-ratio</code>, <code>color-mix()</code>, and <code>env()</code>.</td><td>&mdash;</td></tr>
+    </tbody>
+  </table></div>
+  <p>Two things this axis is not. It is not browser support — the Snapshot says outright that its audience is implementers and that inclusion turns on specification stability, not adoption. For support, use caniuse or Web Platform Tests. And it is not a reading order: Tier IV contains Selectors 4, CSSOM, and Web Animations, which you will reach for constantly.</p>
+</section>
+
+<section id="gaps">
+  <h2>Empty slots and dead ends</h2>
+  <p class="lede">A complete map has to show where the road stops. These are the places the modular rewrite never finished, and the branches that were abandoned.</p>
+
+  <h3>Slots CSS2.1 still owns</h3>
+  <ul class="plain">
+    <li><b>Normal flow</b> — block and inline layout is still defined by CSS2.1 §9 and §10. No module has replaced it.</li>
+    <li><b>Tables</b> — CSS2.1 §17. <code>css-tables-3</code> exists but has not moved.</li>
+    <li><b>Generated content</b> — CSS2.1 §12. <code>css-content-3</code> is marked severely outdated.</li>
+    <li><b>Paint order and stacking</b> — CSS2.1 Appendix E.</li>
+  </ul>
+
+  <h3>Split and merged, so you know which name to search</h3>
+  <ul class="plain">
+    <li>The CSS2.1 text chapter became four modules: Text, Writing Modes, Text Decoration, and Line Grid.</li>
+    <li>Web Fonts was folded into Fonts, and <code>@font-face</code> lives there now.</li>
+    <li>Line Layout was replaced by Inline Layout.</li>
+    <li>Backgrounds and Borders is splitting at Level 4 into Backgrounds 4 and Borders and Box Decorations 4.</li>
+    <li>Fragmentation was assembled from pieces of Paged Media and Multi-column.</li>
+  </ul>
+
+  <h3>Abandoned — do not chase these</h3>
+  <p>Grid Positioning, Grid Template Layout, Regions, Marquee, Presentation Levels, the Reader media type, Hyperlink Presentation, Behavioral Extensions, Fullscreen, and CSS Math. The Mobile, Print, and TV profiles are also discontinued and unmaintained; the Working Group stopped publishing profiles because they were not proving useful.</p>
+</section>
+
+<section id="update">
+  <h2>Updating the map</h2>
+  <p class="lede">The procedure, for when a spec moves or a module you have never heard of turns up.</p>
+  <dl>
+    <dt>Is it a level bump?</dt>
+    <dd>Same slot. Update the pointer to the higher level and note what it added. Nothing else changes. Most releases are this.</dd>
+
+    <dt>Is it a split?</dt>
+    <dd>One slot becomes two or three siblings under the same stage. Keep them adjacent — the split usually means a chapter grew large enough to level independently, not that the concepts diverged.</dd>
+
+    <dt>Is it a merge?</dt>
+    <dd>Two slots collapse into one. Keep the retired name as a search alias; the old spec title is how the feature is still indexed everywhere else.</dd>
+
+    <dt>Is it a genuinely new slot?</dt>
+    <dd>Ask which of the seven questions it answers. Container queries answer &ldquo;which rules are active&rdquo;, so they are stage 1. Anchor positioning answers &ldquo;where does this box sit&rdquo;, so it is stage 5. View transitions answer &ldquo;how does this change over time&rdquo;, so stage 7. If it answers none of them cleanly, it is a cross-cutting frame — and that list is short and grows slowly.</dd>
+  </dl>
+  <p>The one case that needs care: a module can legitimately sit in two stages, and forcing it into one loses information. Color Adjustment is a filter and a paint concern. Pseudo-elements are matched in stage 2 and generate boxes in stage 4. Containment scopes boxes in stage 4 and supplies query conditions in stage 1. Note the second home rather than deleting it.</p>
+  <hr>
+  <p class="end">Sources: CSS Snapshot 2026 (W3C Group Note, 22 June 2026) for every module and tier assignment; the CSSWG specification index (17 July 2026) for drafts, splits, and abandoned work. The Snapshot points to the CSS Current Work page as the authoritative live status list.</p>
+</section>
+
+</main>
+</div>
+</div>
+
+<script>(function(){if(document.getElementById('__ioshtmlviewer_back'))return;var a=document.createElement('a');a.id='__ioshtmlviewer_back';a.href=new URL('../',location.href).href;a.setAttribute('aria-label','Back to iOS HTML Viewer');a.textContent='\u2039';a.style.cssText='position:absolute;left:10px;top:calc(8px + env(safe-area-inset-top,0px));width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font:600 17px/27px -apple-system,Arial,sans-serif;text-align:center;text-decoration:none;z-index:2147483647;opacity:.5';a.addEventListener('touchstart',function(){a.style.opacity='1';},{passive:true});a.addEventListener('mouseenter',function(){a.style.opacity='1';});a.addEventListener('mouseleave',function(){a.style.opacity='.5';});function add(){if(document.body)document.body.appendChild(a);}if(document.body)add();else document.addEventListener('DOMContentLoaded',add);})();</script>
+</body>
+</html>
